@@ -10,7 +10,7 @@ Scheduler userScheduler;
 painlessMesh mesh;
 
 // Laptop server details
-IPAddress serverIP(192, 168, 1, 100); // Replace with your laptop's IP
+IPAddress serverIP(192,168,222,53); // Replace with your laptop's IP
 uint16_t serverPort = 12345;          // Laptop server's port
 WiFiClient client;
 

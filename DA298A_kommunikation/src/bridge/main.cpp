@@ -1,23 +1,32 @@
 #include <Arduino.h>
-#include <painlessMesh.h>
+#include "namedMesh.h"
 
-// put function declarations here:
-int myFunction(int, int);
+#define   MESH_SSID       "meshNetwork"
+#define   MESH_PASSWORD   "meshPassword"
+#define   MESH_PORT       5555
+
+Scheduler userScheduler; 
+namedMesh mesh;
+
+String nodeName = "bridge"; // Unique name for the bridge node
 
 void setup() {
-  // put your setup code here, to run once:
-    Serial.begin(115200);
-  int result = myFunction(2, 3);
+  Serial.begin(115200);
+
+  //mesh.setDebugMsgTypes(ERROR | CONNECTION); 
+  mesh.init(MESH_SSID, MESH_PASSWORD, &userScheduler, MESH_PORT);
+
+  mesh.setName(nodeName); // Set the node name as "bridge"
+
+  mesh.onReceive([](String &from, String &msg) {
+    Serial.printf("Received message from %s: %s\n", from.c_str(), msg.c_str());
+  });
+
+  mesh.onChangedConnections([]() {
+    Serial.printf("Connection table changed\n");
+  });
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  Serial.println("Hello, world! from bridge");
-  delay(1000);
-
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+  mesh.update();
 }

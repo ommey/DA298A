@@ -1,23 +1,46 @@
 #include <Arduino.h>
-#include <painlessMesh.h>
+#include "namedMesh.h"
 
-// put function declarations here:
-int myFunction(int, int);
+#define   MESH_SSID       "meshNetwork"
+#define   MESH_PASSWORD   "meshPassword"
+#define   MESH_PORT       5555
+
+Scheduler userScheduler;
+namedMesh mesh;
+
+String bridgeName = "bridge"; // Target node (bridge)
+String nodeName; // Unique name for this node
+
+Task taskSendMessage(TASK_SECOND * 10, TASK_FOREVER, []() {
+    String msg = "Hello from " + nodeName;
+    if (!mesh.sendSingle(bridgeName, msg)) {
+        Serial.println("Message send failed!");
+    }
+});
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(115200);
-  int result = myFunction(2, 3);
+
+  //mesh.setDebugMsgTypes(ERROR | CONNECTION); 
+  mesh.init(MESH_SSID, MESH_PASSWORD, &userScheduler, MESH_PORT);
+
+  // Assign a unique name based on the node's ID
+  nodeName = "node_" + String(mesh.getNodeId());
+  mesh.setName(nodeName); 
+
+  mesh.onReceive([](String &from, String &msg) {
+    Serial.printf("Received message from %s: %s\n", from.c_str(), msg.c_str());
+  });
+
+  mesh.onChangedConnections([]() {
+    Serial.printf("Connection table changed\n");
+  });
+
+  // Add and enable the task for sending messages
+  userScheduler.addTask(taskSendMessage);
+  taskSendMessage.enable();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-    Serial.println("Hello, world! from firefirghter");
-    delay(1000);
-
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+  mesh.update();
 }

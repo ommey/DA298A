@@ -1,4 +1,17 @@
-#include <Arduino.h>
+#include "namedMesh.h"
+
+#define   MESH_SSID       "meshNetwork"
+#define   MESH_PASSWORD   "meshPassword"
+#define   MESH_PORT       5555
+
+String nodeName = "bridge"; // namnet på brygg-noden
+namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder
+
+
+
+
+
+/*#include <Arduino.h>
 #include "namedMesh.h"
 
 #define   MESH_SSID       "meshNetwork"
@@ -72,3 +85,4 @@ void updateFromGUI() {
 void loop() {
   mesh.update();
 }
+*/

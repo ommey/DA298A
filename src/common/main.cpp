@@ -50,15 +50,19 @@ void fireFighterStuff(){
 }
 
 void doFireFighterStuff(void *pvParameters){
-  int work = 0;
+  int work = 0; //räknare som kan användas för att testa tick-funktionen
   while(1){
+
     fireFighterStuff();
+
+    //********räknare som kan användas för att testa tick-funktionen
     work++;
     if (work > 1000)
     {
       work = 0;
     }
-    Serial.println(work); //räknare som kan användas för att testa tick-funktionen
+    Serial.println(work); 
+    //*********räknare som kan användas för att testa tick-funktionen
 
     vTaskDelay(100 / portTICK_PERIOD_MS);
   }

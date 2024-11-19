@@ -11,10 +11,10 @@ String nodeName; // namnet på noden
 //
 namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder
 
-void informBridge(void *pvParameters);
-void meshUpdate(void *pvParameters);
-void doFireFighterStuff(void *pvParameters);
-void fireFighterStuff();
+void informBridge(void *pvParameters); //dek av funktion som peeriodiskt uppdaterar gui med egenägd info
+void meshUpdate(void *pvParameters); //skit i denna, till för pinlessmesh
+void doFireFighterStuff(void *pvParameters); //gör branmansjobbet
+void fireFighterStuff(); //själva brandmansjobbet
 
 void setup() {
   Serial.begin(115200);
@@ -34,6 +34,7 @@ void setup() {
     Serial.printf("Connection table changed\n");
   });
 
+//skapa tasks
   xTaskCreate(meshUpdate, "meshUpdate", 10000, NULL, 1, NULL);
   xTaskCreate(informBridge, "informBridge", 10000, NULL, 1, NULL); 
   xTaskCreate(doFireFighterStuff, "doFireFighterStuff", 10000, NULL, 1, NULL);

@@ -1,7 +1,8 @@
-#include "Tile.h"
-#include <array>
 #ifndef FIREFIGHTER_H_
 #define FIREFIGHTER_H_
+
+#include "Tile.h"
+#include <array>
 
 using namespace std;
 

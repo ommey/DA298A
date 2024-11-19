@@ -9,12 +9,12 @@ String bridgeNAme = "bridge"; // namnet på brygga-noden
 //
 String nodeName; // namnet på noden
 //
-namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder
+namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
 
-void informBridge(void *pvParameters); //dek av funktion som peeriodiskt uppdaterar gui med egenägd info
-void meshUpdate(void *pvParameters); //skit i denna, till för pinlessmesh
-void doFireFighterStuff(void *pvParameters); //gör branmansjobbet
-void fireFighterStuff(); //själva brandmansjobbet
+void informBridge(void *pvParameters); //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
+void meshUpdate(void *pvParameters); //skit i denna, till för pinlessmesh,  freertos task funktion som uppdaterar meshen
+void doFireFighterStuff(void *pvParameters); // freertos task funktion som gör branmansjobbet kontinueligt
+void fireFighterStuff(); //själva brandmansjobbet, kallelse till denna stegar tillståndsmaskinen
 
 void setup() {
   Serial.begin(115200);

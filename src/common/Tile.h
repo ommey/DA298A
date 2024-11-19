@@ -1,5 +1,5 @@
-#ifndef TILE_H
-#define TILE_H
+#ifndef TILE_H_
+#define TILE_H_
 
 using namespace std;
 
@@ -22,4 +22,4 @@ class Tile {
         int getEvents() const;
 };
 
-#endif TILE_H
+#endif

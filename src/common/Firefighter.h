@@ -1,7 +1,7 @@
 #include "Tile.h"
 #include <array>
-#ifndef FIREFIGHTER.H
-#define FIREFIGHTER.H
+#ifndef FIREFIGHTER_H_
+#define FIREFIGHTER_H_
 
 using namespace std;
 
@@ -26,4 +26,4 @@ class Firefighter {
         void move(int x, int y);
 };
 
-#endif FIREFIGHTER.H
+#endif

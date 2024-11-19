@@ -3,5 +3,5 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
-#oooops, denna filen konfigureras på användarsidan
+#oooops, denna filen konfigureras på utvecklarsidan
 platformio.ini 

@@ -7,25 +7,25 @@
 #define   MESH_PORT       5555
 
 std::map<String, std::pair<int, int>> contactList;  // Map of node IDs to their positions
-Firefighter hoesHolder;  // Create this firefighter
-String bridgeNAme = "bridge"; // namnet på brygga-noden
-String nodeName; // namnet på noden
-namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
+Firefighter hoesHolder;  // This firefighter
+String bridgeNAme = "bridge";  // namnet på brygga-noden
+String nodeName;  // namnet på noden
+namedMesh mesh;  //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
 
-void informBridge(void *pvParameters); //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
-void meshUpdate(void *pvParameters); //skit i denna, till för pinlessmesh,  freertos task funktion som uppdaterar meshen
-void doFireFighterStuff(void *pvParameters); // freertos task funktion som gör branmansjobbet kontinueligt
-void fireFighterStuff(); //själva brandmansjobbet, kallelse till denna stegar tillståndsmaskinen
+void informBridge(void *pvParameters);  //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
+void meshUpdate(void *pvParameters);  //skit i denna, till för pinlessmesh,  freertos task funktion som uppdaterar meshen
+void doFireFighterStuff(void *pvParameters);  // freertos task funktion som gör branmansjobbet kontinueligt
+void fireFighterStuff();  //själva brandmansjobbet, kallelse till denna stegar tillståndsmaskinen
 
 void setup() {
   Serial.begin(115200);
   Serial.setTimeout(50);
-  hoesHolder = Firefighter(); //skapa en brandman
+  hoesHolder = Firefighter();  //skapa en brandman
 
   //mesh.setDebugMsgTypes(ERROR | CONNECTION);
-  mesh.init(MESH_SSID, MESH_PASSWORD, MESH_PORT); // Starta meshen
+  mesh.init(MESH_SSID, MESH_PASSWORD, MESH_PORT);  // Starta meshen
 
-  nodeName = String(mesh.getNodeId()); //namnet kan modifieras mes.getNodeId() är alltid unikt
+  nodeName = String(mesh.getNodeId());  //namnet kan modifieras mes.getNodeId() är alltid unikt
   mesh.setName(nodeName);
 
   mesh.onReceive([](String &from, String &msg) {
@@ -54,10 +54,8 @@ void setup() {
   //xTaskCreate(doFireFighterStuff, "doFireFighterStuff", 10000, NULL, 1, NULL);
 }
 
-void loop() 
-{
-  // inget görs här, aktiviteter sköts i freeRTOS tasks
-}
+// inget görs här, aktiviteter sköts i freeRTOS tasks
+void loop() {}
 
 void fireFighterStuff(){
   Serial.print("Branmannen inom mig jobbar hårt "); //här går tillståndsmaskinen in istället för denna printout
@@ -89,7 +87,7 @@ void informBridge(void *pvParameters) {
     if (!mesh.sendSingle(bridgeNAme, msg)) {
       Serial.println("Message send failed!");
     }  
-    vTaskDelay(1000 / portTICK_PERIOD_MS);    
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
 

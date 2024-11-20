@@ -63,7 +63,7 @@ void setup() {
   mesh.setName(nodeName);
 
   mesh.onReceive([](String &from, String &msg) {
-  //  Serial.printf("Received message from %s: %s\n", from.c_str(), msg.c_str());
+    Serial.printf("Received message from %s: %s\n", from.c_str(), msg.c_str());
   });
 
   mesh.onChangedConnections([]() {

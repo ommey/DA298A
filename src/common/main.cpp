@@ -6,13 +6,10 @@
 #define   MESH_PASSWORD   "meshPassword"
 #define   MESH_PORT       5555
 
-std::map<String, std::pair<int, int>> contactList;
-Firefighter hoesHolder;
-
+std::map<String, std::pair<int, int>> contactList;  // Map of node IDs to their positions
+Firefighter hoesHolder;  // Create this firefighter
 String bridgeNAme = "bridge"; // namnet på brygga-noden
-//
 String nodeName; // namnet på noden
-//
 namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
 
 void informBridge(void *pvParameters); //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info

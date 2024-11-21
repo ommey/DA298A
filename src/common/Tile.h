@@ -21,5 +21,3 @@ class Tile {
         void setEvents(int events);
         int getEvents() const;
 };
-
-#endif 

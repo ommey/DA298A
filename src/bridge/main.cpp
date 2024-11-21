@@ -44,6 +44,21 @@ void meshUpdate(void *pvParameters){
     }
 }
 
+void updateParticipantsStatus(void *pvParameters) {
+    while (1) {
+        Serial.print("participants:");
+        auto nodes = mesh.getNodeList();
+        for (auto iter = nodes.begin(); iter != nodes.end(); ++iter) {
+            Serial.print(*iter);
+            if (std::next(iter) != nodes.end()) {
+                Serial.print(":");
+            }
+        }
+        Serial.println();
+        vTaskDelay(10000 / portTICK_PERIOD_MS); // Adjust the delay as needed
+    }
+}
+
 void printTable() {
     auto nodes = mesh.getNodeList();
 Serial.println("Connected nodes:");
@@ -72,6 +87,7 @@ void setup() {
 
     xTaskCreate(meshUpdate, "meshUpdate", 10000, NULL, 1, NULL); // Skapa en task som uppdaterar meshen
     xTaskCreate(updateFromGUI, "updateFromGUI", 10000, NULL, 1, NULL); // Skapa en task som lyssnar på Serial
+    xTaskCreate(updateParticipantsStatus, "updateParticipantsStatus", 10000, NULL, 1, NULL); // Skapa en task som skickar fake-meddelanden
 }
 
 void loop() 

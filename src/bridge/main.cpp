@@ -55,7 +55,7 @@ void updateParticipantsStatus(void *pvParameters) {
             }
         }
         Serial.println();
-        vTaskDelay(10000 / portTICK_PERIOD_MS); // Adjust the delay as needed
+        vTaskDelay(100 / portTICK_PERIOD_MS); // Adjust the delay as needed
     }
 }
 

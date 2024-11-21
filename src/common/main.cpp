@@ -68,6 +68,21 @@ void doFireFighterStuff(void *pvParameters){
   }
 }
 
+void updateParticipantsStatus(void *pvParameters) {
+    while (1) {
+        Serial.print("participants:");
+        auto nodes = mesh.getNodeList();
+        for (auto iter = nodes.begin(); iter != nodes.end(); ++iter) {
+            Serial.print(*iter);
+            if (std::next(iter) != nodes.end()) {
+                Serial.print(", ");
+            }
+        }
+        Serial.println();
+        vTaskDelay(1000 / portTICK_PERIOD_MS); // Adjust the delay as needed
+    }
+}
+
 void informBridge(void *pvParameters) {
     while (1)
     {

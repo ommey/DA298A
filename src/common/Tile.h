@@ -7,8 +7,8 @@ class Tile {
     private: 
         int x;
         int y;
-        int events = 0b0000;
-        int walls = 0b0000;
+        int events = 0b0000; // person, material, fire, smoke
+        int walls = 0b0000; // west, south, east, north
 
     public:
         Tile();
@@ -21,5 +21,3 @@ class Tile {
         void setEvents(int events);
         int getEvents() const;
 };
-
-#endif

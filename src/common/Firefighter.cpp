@@ -35,10 +35,10 @@
         Tile Firefighter::getTargetTile(){
             return targetTile;
         }
-        void Firefighter::setHasTarget(bool hasTarget){
+        void Firefighter::setHasTarget(const bool hasTarget){
             this->hasTarget = hasTarget;
         }
-        bool Firefighter::getHasTarget(){
+        bool Firefighter::getHasTarget() const {
             return hasTarget;
         }
         void Firefighter::move(int x, int y) {

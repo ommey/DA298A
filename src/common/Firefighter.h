@@ -1,8 +1,7 @@
-#ifndef FIREFIGHTER_H_
-#define FIREFIGHTER_H_
-
 #include "Tile.h"
 #include <array>
+#ifndef FIREFIGHTER_H_
+#define FIREFIGHTER_H_
 
 using namespace std;
 
@@ -31,8 +30,8 @@ class Firefighter {
         int handleSmokeFire(int x, int y);
         void setTargetTile(const Tile& targetTile);
         Tile getTargetTile();
-        void setHasTarget(bool hasTarget);
-        bool getHasTarget();
+        void setHasTarget(const bool hasTarget);
+        bool getHasTarget() const;
 };
 
-#endif 
+#endif

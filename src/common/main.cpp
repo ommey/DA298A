@@ -203,7 +203,7 @@ void setup() {
 //skapa tasks
   xTaskCreate(meshUpdate, "meshUpdate", 10000, NULL, 1, NULL);
   xTaskCreate(informBridge, "informBridge", 10000, NULL, 1, NULL); 
-  xTaskCreate(doFireFighterStuff, "doFireFighterStuff", 10000, NULL, 1, NULL);
+  //xTaskCreate(doFireFighterStuff, "doFireFighterStuff", 10000, NULL, 1, NULL);
 
   std::array<std::array<Tile, 6>, 8> grid; 
   for(int i = 0; i < 8; ++i){
@@ -291,11 +291,11 @@ void handleSearching() {
     currX = FF.getCurrentTile().getX();
     currY = FF.getCurrentTile().getY();
 
-    Serial.printf("Moved to %d, %d", currX, currY);
+    Serial.printf("\n Moved to %d, %d", currX, currY);
 
     msg = "Firefighter from " + String(lastX) + " " + String(lastY) + " to " + String(currX) + " " + String(currY);
 
-    informBridge(&msg); // Skickar senast och nuvarande koordinater till bridge
+    messagesToBridge.push(msg); // Skickar senast och nuvarande koordinater till bridge
 
     changeState();
 }
@@ -372,7 +372,7 @@ void handlePuttingOut() {
         msg = "Fire putout " + String(putOutX) + " " + String(putOutY);
     }
 
-    informBridge(&msg); // Skickar event och koordinater till bridge
+    messagesToBridge.push(msg); // Skickar event och koordinater till bridge
 
     // Skicka event och koordinater till brandmän
 
@@ -398,14 +398,14 @@ void handleCarrying() {
 
                 FF.removeEvent(currX,currY,PERSON);
                 msg = "Victim saved " + String(currX) + " " + String(currY);
-                informBridge(&msg);
+                messagesToBridge.push(msg);
                 FF.setCarryingPerson(false);
 
             } else if (FF.getCarryingHazmat()) {
 
                 FF.removeEvent(currX,currY,HAZMAT);
                 msg = "Hazmat saved " + String(currX) + " " + String(currY);
-                informBridge(&msg);
+                messagesToBridge.push(msg);
                 FF.setCarryingHazmat(false);
             }   
             changeState();
@@ -416,19 +416,19 @@ void handleCarrying() {
                 FF.removeEvent(currX, currY, PERSON);
                 FF.addEvent(currX, currY+1, PERSON);
                 msg = "Victim from " + String(currX) + " " + String(currY) + " " + String(currX) + String(currY+1);
-                informBridge(&msg);
+                messagesToBridge.push(msg);
 
                 msg = "Firefighter from " + String(currX) + " " + String(currY) + " " + String(currX) + String(currY+1);
-                informBridge(&msg);
+                messagesToBridge.push(msg);
             } else if(FF.getCarryingHazmat()){
 
                 FF.removeEvent(currX, currY, HAZMAT);
                 FF.addEvent(currX, currY+1, HAZMAT);
                 msg = "Hazmat from " + String(currX) + " " + String(currY) + " " + String(currX) + String(currY+1);
-                informBridge(&msg);
+                messagesToBridge.push(msg);
 
                 msg = "Firefighter from " + String(currX) + " " + String(currY) + " " + String(currX) + String(currY+1);
-                informBridge(&msg);
+                messagesToBridge.push(msg);
             }                        
             FF.move(currX, currY+1);
         }
@@ -438,14 +438,14 @@ void handleCarrying() {
 
                 FF.removeEvent(currX, currY, PERSON);
                 msg = "Victim saved " + String(currX) + " " + String(currY);
-                informBridge(&msg);
+                messagesToBridge.push(msg);
                 FF.setCarryingPerson(false);
 
             } else if(FF.getCarryingHazmat()){
 
                 FF.removeEvent(currX,currY,HAZMAT);
                 msg = "Hazmat saved " + String(currX) + " " + String(currY);
-                informBridge(&msg);
+                messagesToBridge.push(msg);
                 FF.setCarryingHazmat(false);
 
             }   
@@ -458,19 +458,19 @@ void handleCarrying() {
                 FF.removeEvent(currX, currY, PERSON);
                 FF.addEvent(currX, currY-1, PERSON);
                 msg = "Victim from " + String(currX) + " " + String(currY) + " " + String(currX) + String(currY-1);
-                informBridge(&msg);
+                messagesToBridge.push(msg);
 
                 msg = "Firefighter from " + String(currX) + " " + String(currY) + " " + String(currX) + String(currY-1);
-                informBridge(&msg);
+                messagesToBridge.push(msg);
 
             } else if(FF.getCarryingHazmat()){
                 FF.removeEvent(currX, currY, HAZMAT);
                 FF.addEvent(currX, currY-1, HAZMAT);
                 msg = "Hazmat from " + String(currX) + " " + String(currY) + " " + String(currX) + String(currY-1);
-                informBridge(&msg);
+                messagesToBridge.push(msg);
 
                 msg = "Firefighter from " + String(currX) + " " + String(currY) + " " + String(currX) + String(currY-1);
-                informBridge(&msg);
+                messagesToBridge.push(msg);
             }                
             FF.move(currX, currY-1);
             int currEvent = FF.getGrid()[currX][currY-1].getEvents();
@@ -509,7 +509,7 @@ void handlePickingUpPerson() {
 
     msg = "Firefighter from " + String(lastX) + " " + String(lastY) + " to " + String(currX) + " " + String(currY);
 
-    informBridge(&msg); // Skickar senast och nuvarande koordinater till bridge
+    messagesToBridge.push(msg); // Skickar senast och nuvarande koordinater till bridge
 
     state = States::WAITING;
 }
@@ -537,7 +537,7 @@ void handlePickingUpMaterial() {
 
     msg = "Firefighter from " + String(lastX) + " " + String(lastY) + " to " + String(currX) + " " + String(currY);
 
-    informBridge(&msg); // Skickar senast och nuvarande koordinater till bridge
+    messagesToBridge.push(msg); // Skickar senast och nuvarande koordinater till bridge
 
     state = States::CARRYING;
 }
@@ -604,10 +604,9 @@ void fireFighterStuff() {
             handlePickingUpMaterial();
 
             break;
-        
     };
 }
-
+/*
 void doFireFighterStuff(void *pvParameters){
   int work = 0; //räknare som kan användas för att testa tick-funktionen
   while(1){
@@ -626,6 +625,7 @@ void doFireFighterStuff(void *pvParameters){
     vTaskDelay(100 / portTICK_PERIOD_MS);
   }
 }
+*/
 
 void informBridge(void *pvParameters) {
   while (1)

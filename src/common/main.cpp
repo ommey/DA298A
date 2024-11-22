@@ -49,8 +49,6 @@ String nodeName; // namnet på noden
 //
 namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
 std::map<String, std::pair<int, int>> contactList;  // Map of node IDs to their positions
-Firefighter hoesHolder;  // This firefighter
-
 
 void informBridge(void *pvParameters);  //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
 void meshUpdate(void *pvParameters);  //skit i denna, till för pinlessmesh,  freertos task funktion som uppdaterar meshen
@@ -124,7 +122,6 @@ void changeState(){
 void setup() {
   Serial.begin(115200);
   Serial.setTimeout(50);
-  hoesHolder = Firefighter();  //skapa en brandman
 
   //mesh.setDebugMsgTypes(ERROR | CONNECTION);
   mesh.init(MESH_SSID, MESH_PASSWORD, MESH_PORT);  // Starta meshen
@@ -645,7 +642,7 @@ void newConnectionCallback(uint32_t nodeId) {
     Serial.printf("New Connection, nodeId = %u\n", nodeId);
 
     // Send this node's position to the new connection
-    String posMsg = "Pos:" + String(hoesHolder.getCurrentTile().getX()) + "," + String(hoesHolder.getCurrentTile().getY());
+    String posMsg = "Pos:" + String(FF.getCurrentTile().getX()) + "," + String(FF.getCurrentTile().getY());
     mesh.sendSingle(nodeId, posMsg);
 }
 

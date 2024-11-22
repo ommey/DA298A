@@ -46,15 +46,15 @@ void meshUpdate(void *pvParameters){
 
 void printTable() {
     auto nodes = mesh.getNodeList();
-Serial.println("Connected nodes:");
-for (auto node : nodes) {
-  Serial.println(node);
-}
+    Serial.println("Connected nodes:");
+    for (auto node : nodes) {
+        Serial.println(node);
+    }
 }
 
 void setup() {
   Serial.begin(115200);
-  Serial.setTimeout(50);
+  //Serial.setTimeout(50);  // Behövs inte???
 
   //mesh.setDebugMsgTypes(ERROR | CONNECTION); 
 
@@ -63,7 +63,7 @@ void setup() {
   mesh.setName(nodeName);
 
   mesh.onReceive([](String &from, String &msg) {
-  //  Serial.printf("Received message from %s: %s\n", from.c_str(), msg.c_str());
+    Serial.printf(msg.c_str());
   });
 
   mesh.onChangedConnections([]() {
@@ -74,7 +74,4 @@ void setup() {
     xTaskCreate(updateFromGUI, "updateFromGUI", 10000, NULL, 1, NULL); // Skapa en task som lyssnar på Serial
 }
 
-void loop() 
-{
-    // inget görs här, aktiviteter sköts i freeRTOS tasks
-}
+void loop() {}  // inget görs här, aktiviteter sköts i freeRTOS tasks

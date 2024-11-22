@@ -49,6 +49,7 @@ String nodeName; // namnet på noden
 //
 namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
 std::map<String, std::pair<int, int>> contactList;  // Map of node IDs to their positions
+queue<String> messagesToBridge;  //kö för meddelanden som ska skickas till bryggan | !push för att lägga till!
 
 void informBridge(void *pvParameters);  //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
 void meshUpdate(void *pvParameters);  //skit i denna, till för pinlessmesh,  freertos task funktion som uppdaterar meshen
@@ -629,10 +630,14 @@ void doFireFighterStuff(void *pvParameters){
 void informBridge(void *pvParameters) {
   while (1)
   {
-    String msg = "Hello from " + nodeName;
-    if (!mesh.sendSingle(bridgeNAme, msg)) {
-      Serial.println("Message send failed!");
-    }  
+    if (!messagesToBridge.empty()) {
+      String msg = messagesToBridge.front();
+      if (!mesh.sendSingle(bridgeNAme, msg)) {
+        Serial.println("Message send failed!");
+      }
+      messagesToBridge.pop();
+    }
+    
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }

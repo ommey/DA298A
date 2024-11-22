@@ -131,7 +131,7 @@ void setup() {
   mesh.setName(nodeName);
 
   mesh.onReceive([](String &from, String &msg) {
-    Serial.printf("Received message from %s: %s\n", from.c_str(), msg.c_str());
+    Serial.printf("\n Received message from %s: %s", from.c_str(), msg.c_str());
     if (from == bridgeNAme) {
       std::vector<std::string> tokens = tokenize(msg.c_str());
       if (tokens.size() == 1 && tokens[0] == "Tick")
@@ -197,7 +197,7 @@ void setup() {
   });
 
   mesh.onChangedConnections([]() {
-    Serial.printf("Connection table changed\n");
+    Serial.printf("\n Connection table changed");
   });
 
 //skapa tasks
@@ -633,7 +633,7 @@ void informBridge(void *pvParameters) {
     if (!messagesToBridge.empty()) {
       String msg = messagesToBridge.front();
       if (!mesh.sendSingle(bridgeNAme, msg)) {
-        Serial.println("Message send failed!");
+        Serial.println("\n Message send failed!");
       }
       messagesToBridge.pop();
     }
@@ -644,7 +644,7 @@ void informBridge(void *pvParameters) {
 
 // This function is called when a new node connects
 void newConnectionCallback(uint32_t nodeId) {
-    Serial.printf("New Connection, nodeId = %u\n", nodeId);
+    Serial.printf("\n New Connection, nodeId = %u\n", nodeId);
 
     // Send this node's position to the new connection
     String posMsg = "Pos:" + String(FF.getCurrentTile().getX()) + "," + String(FF.getCurrentTile().getY());
@@ -653,13 +653,13 @@ void newConnectionCallback(uint32_t nodeId) {
 
 // This function is called when a node disconnects
 void lostConnectionCallback(uint32_t nodeId) {
-    Serial.printf("Lost Connection, nodeId = %u\n", nodeId);
+    Serial.printf("\n Lost Connection, nodeId = %u\n", nodeId);
 
     // Remove the disconnected node from the position map
     if (contactList.erase(String(nodeId))) {
-        Serial.printf("Node %u removed from position map\n", nodeId);
+        Serial.printf("\n Node %u removed from position map\n", nodeId);
     } else {
-        Serial.printf("Node %u was not in the position map\n", nodeId);
+        Serial.printf("\n Node %u was not in the position map\n", nodeId);
     }
 }
 

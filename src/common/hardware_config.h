@@ -1,3 +1,3 @@
-#define BUTTON_3 32
-#define BUTTON_2 35
-#define BUTTON_1 34
+#define BUTTON_3 GPIO_NUM_32
+#define BUTTON_2 GPIO_NUM_35
+#define BUTTON_1 GPIO_NUM_34

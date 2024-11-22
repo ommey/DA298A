@@ -67,7 +67,7 @@ void setup() {
   });
 
   mesh.onChangedConnections([]() {
-    printTable();
+    //printTable();
   });
 
     xTaskCreate(meshUpdate, "meshUpdate", 10000, NULL, 1, NULL); // Skapa en task som uppdaterar meshen

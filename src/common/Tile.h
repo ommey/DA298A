@@ -3,23 +3,44 @@
 
 using namespace std;
 
-class Tile {
+enum class Event : int 
+{
+    SMOKE  = 0b0001,
+    FIRE   = 0b0010,
+    HAZMAT = 0b0100,
+    VICTIM = 0b1000
+};
+
+enum class Wall : int 
+{
+    NORTH  = 0b0001,
+    EAST   = 0b0010,
+    SOUTH = 0b0100,
+    WEST = 0b1000
+};
+
+class Tile
+ {
     private: 
-        int x;
-        int y;
-        int events = 0b0000; // person, material, fire, smoke
-        int walls = 0b0000; // west, south, east, north
+
+        int row;
+        int column;
+        int events = 0b0000; 
+        int walls = 0b0000; 
 
     public:
-        Tile();
-        Tile(int x, int y);
-        void setWalls(int walls);
-        int getWalls() const;
-        void setCoordinates(int x, int y);
-        int getX() const;
-        int getY() const;
-        void setEvents(int events);
-        int getEvents() const;
+
+        int firefighters;
+        
+        Tile() : row(0), column(0) {}
+        Tile(int row, int column);
+        void addWall(Wall wall);
+        bool hasWall(Wall wall) const;
+        int getRow() const;
+        int getColumn() const;
+        void addEvent(Event e);
+        void removeEvent(Event e);
+        bool hasEvent(Event e);  
 };
 
 #endif

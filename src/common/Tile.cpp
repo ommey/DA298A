@@ -1,28 +1,43 @@
 #include "Tile.h"
    
-    Tile::Tile(int x, int y) : x(x), y(y), walls(0b0000), events(0b0000) {}
+    Tile::Tile(int row, int column)
+    {
+        this->row = row;
+        this->column = column;
+        this->firefighters = 0;
+    }
 
-    Tile::Tile() :x(0), y(0), walls(0b0000), events(0b0000) {}
+    void Tile::addWall(Wall wall) 
+    {
+        walls |= static_cast<int>(wall);
+    }
 
-        void Tile::setWalls(int walls) {
-            this->walls = walls;
-        }
-        int Tile::getWalls() const {
-            return walls;
-        }
-        void Tile::setCoordinates(int x, int y) {
-            this->x = x;
-            this->y = y;
-        }
-        int Tile::getX() const {
-            return x;
-        }
-        int Tile::getY() const {
-            return y;
-        }
-        void Tile::setEvents(int events) {
-            this->events = events;
-        }
-        int Tile::getEvents() const {
-            return this->events;
-        } 
+    bool Tile::hasWall(Wall wall) const 
+    {
+        return (walls & static_cast<int>(wall)) != 0;
+    }
+
+    int Tile::getRow() const 
+    {
+        return row;
+    }
+
+    int Tile::getColumn() const 
+    {
+        return column;
+    }
+
+    void Tile::addEvent(Event e) 
+    {
+        events |= static_cast<int>(e);
+    }
+
+    void Tile::removeEvent(Event e)
+        {
+        events &= ~static_cast<int>(e);
+    }
+
+    bool Tile::hasEvent(Event e) 
+    {
+        return (events & static_cast<int>(e)) != 0;
+    }

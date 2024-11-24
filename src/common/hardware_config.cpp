@@ -1,7 +1,10 @@
 #include "hardware_config.h"
 #include <Arduino.h>
+#include <TFT_eSPI.h>
+#include <SPI.h>
 
 void setup() {
+    TFT_eSPI tft = TFT_eSPI();
     // Initiera seriell kommunikation för debug
     Serial.begin(115200);
 

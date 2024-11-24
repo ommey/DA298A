@@ -1,28 +1,26 @@
 #include "Firefighter.h"
 #include "Tile.h"
 
-Firefighter::Firefighter() : gen(rd()), row_dist(0, 5), col_dist(0, 7)
+Firefighter::Firefighter() : gen(rd()), row_dist(0, 5), col_dist(0, 7) 
 {
+    // Allokera minne för varje Tile och spara pekarna i grid
     for (int row = 0; row < 6; ++row) {
         for (int col = 0; col < 8; ++col) {
-            grid[row][col] = Tile(row, col);
+            grid[row][col] = new Tile(row, col);
         }
     }
 
     this->id = 0;
-    this->currentTile = &grid[0][0];
-    this->lastTile = &grid[0][0];
-    this->targetTile = &grid[0][0];
-    this->exitTile = &grid[0][0]; 
+    this->currentTile = grid[0][0];  // Pekar på första tile
+    this->lastTile = grid[0][0];
+    this->targetTile = grid[0][0];
+    this->exitTile = grid[0][0]; 
     this->state = State::SEARCHING;
-    this->firtsTick = true;
-
-    std::mt19937 gen{rd()};
-    std::uniform_int_distribution<> row_dist(0, 5);
-    std::uniform_int_distribution<> col_dist(0, 7);
+    this->firstTick = true;
 
     addWalls();
 }
+
 
 void Firefighter::setId(int id)
 {
@@ -34,7 +32,7 @@ int Firefighter::getId() const
     return id;
 }    
 
-void Firefighter::move(Tile& destination)
+void Firefighter::move(const Tile* destination)
 {
     Serial.println("Kom in i move metoden");
     
@@ -46,19 +44,19 @@ void Firefighter::move(Tile& destination)
     int new_row = currentTile->getRow();  
     int new_column = currentTile->getColumn(); 
           
-    if (destination.getRow() < currentTile->getRow() && !currentTile->hasWall(Wall::NORTH)) 
+    if (destination->getRow() < currentTile->getRow() && !currentTile->hasWall(Wall::NORTH)) 
     {
         new_row = currentTile->getRow() - 1;
     }
-    else if (destination.getRow() > currentTile->getRow() && !currentTile->hasWall(Wall::SOUTH)) 
+    else if (destination->getRow() > currentTile->getRow() && !currentTile->hasWall(Wall::SOUTH)) 
     {
         new_row = currentTile->getRow() + 1;
     }
-    if (destination.getColumn() < currentTile->getColumn() && !currentTile->hasWall(Wall::WEST)) 
+    if (destination->getColumn() < currentTile->getColumn() && !currentTile->hasWall(Wall::WEST)) 
     {
         new_column = currentTile->getColumn() - 1;
     }
-    else if (destination.getColumn() > currentTile->getColumn() && !currentTile->hasWall(Wall::EAST)) 
+    else if (destination->getColumn() > currentTile->getColumn() && !currentTile->hasWall(Wall::EAST)) 
     {
         new_column = currentTile->getColumn() + 1;
     }
@@ -69,13 +67,13 @@ void Firefighter::move(Tile& destination)
         return;
     }
 
-    if (new_row < 0 || new_row >= 5 || new_column < 0 || new_column >= 7) 
+    if (new_row < 0 || new_row >= 6 || new_column < 0 || new_column >= 8)
     {
         Serial.println("Fel: ny position utanför gränserna.");
         return;
     }
 
-    currentTile = &grid[new_row][new_column];
+    currentTile = grid[new_row][new_column];
     currentTile->firefighters++;
 
     msg += String(currentTile->getRow()) + " " + String(currentTile->getColumn());
@@ -83,9 +81,9 @@ void Firefighter::move(Tile& destination)
 }
 
 
-bool Firefighter::ChangeState(Tile& tile)
+bool Firefighter::ChangeState(Tile* tile)
 {
-    targetTile = &tile;
+    targetTile = tile;
 
     if (targetTile->hasEvent(Event::VICTIM))
     {
@@ -112,7 +110,7 @@ bool Firefighter::ChangeState(Tile& tile)
 
 bool Firefighter::CheckSurroundingsForEvent()
 {
-    if (ChangeState(*currentTile))
+    if (ChangeState(currentTile))
     {
         Serial.println("Hittade target på samma tile");
         return true; 
@@ -162,7 +160,7 @@ void Firefighter::searchForTarget()
 
 void Firefighter::moveToTarget()
 {
-    move(*targetTile);
+    move(targetTile);
     if (currentTile->getRow() == targetTile->getRow() && currentTile->getColumn() == targetTile->getColumn())
     {
         state = State::SEARCHING;
@@ -201,7 +199,7 @@ void Firefighter::moveHazmat()
     {
         String msg = "Hazmat from " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()) + " to ";
         currentTile->removeEvent(Event::HAZMAT);
-        move(*exitTile);
+        move(exitTile);
         currentTile->addEvent(Event::HAZMAT);
         msg += String(currentTile->getRow()) + " " + String(currentTile->getColumn());
         messagesToBridge.push(msg);
@@ -220,7 +218,7 @@ void Firefighter::rescuePerson()
     {
         String msg = "Victim from " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()) + " to ";
         currentTile->removeEvent(Event::VICTIM);
-        move(*exitTile);
+        move(exitTile);
         currentTile->addEvent(Event::VICTIM);
         msg += String(currentTile->getRow()) + " " + String(currentTile->getColumn());
         messagesToBridge.push(msg);
@@ -234,10 +232,10 @@ void Firefighter::Die()
         
 void Firefighter::Tick() 
 {
-    if (firtsTick)
+    if (firstTick)
     { 
         messagesToBridge.push("Firefighter from 0 0 to 0 0");
-        firtsTick = false;
+        firstTick = false;
     }
 
     switch (state) {
@@ -274,73 +272,82 @@ void Firefighter::Tick()
 
 void Firefighter::addWalls()
 {
-    grid[0][0].addWall(Wall::NORTH);
-    grid[0][0].addWall(Wall::WEST);
-    grid[1][0].addWall(Wall::WEST);
-    grid[2][0].addWall(Wall::WEST);
-    grid[2][0].addWall(Wall::SOUTH);
-    grid[3][0].addWall(Wall::WEST);
-    grid[3][0].addWall(Wall::NORTH);
-    grid[4][0].addWall(Wall::WEST);
-    grid[5][0].addWall(Wall::WEST);
-    grid[5][0].addWall(Wall::SOUTH);
-    grid[5][0].addWall(Wall::EAST);
-    grid[0][1].addWall(Wall::NORTH);
-    grid[2][1].addWall(Wall::SOUTH);
-    grid[3][1].addWall(Wall::NORTH);
-    grid[4][1].addWall(Wall::SOUTH);
-    grid[4][1].addWall(Wall::EAST);
-    grid[5][1].addWall(Wall::SOUTH);
-    grid[5][1].addWall(Wall::WEST);
-    grid[5][1].addWall(Wall::NORTH);
-    grid[0][2].addWall(Wall::NORTH);
-    grid[0][2].addWall(Wall::EAST);
-    grid[2][2].addWall(Wall::EAST);
-    grid[4][2].addWall(Wall::EAST);
-    grid[4][2].addWall(Wall::WEST);
-    grid[5][2].addWall(Wall::SOUTH);
-    grid[0][3].addWall(Wall::WEST);
-    grid[0][3].addWall(Wall::EAST);
-    grid[0][3].addWall(Wall::NORTH);
-    grid[2][3].addWall(Wall::WEST);
-    grid[2][3].addWall(Wall::EAST);
-    grid[4][3].addWall(Wall::SOUTH);
-    grid[4][3].addWall(Wall::WEST);
-    grid[4][3].addWall(Wall::EAST);
-    grid[5][3].addWall(Wall::SOUTH);
-    grid[5][3].addWall(Wall::EAST);
-    grid[5][3].addWall(Wall::NORTH);
-    grid[0][4].addWall(Wall::NORTH);
-    grid[0][4].addWall(Wall::WEST);
-    grid[2][4].addWall(Wall::WEST);
-    grid[4][4].addWall(Wall::WEST);
-    grid[4][4].addWall(Wall::SOUTH);
-    grid[5][4].addWall(Wall::EAST);
-    grid[5][4].addWall(Wall::SOUTH);
-    grid[5][4].addWall(Wall::WEST);
-    grid[0][5].addWall(Wall::NORTH);
-    grid[5][5].addWall(Wall::WEST);
-    grid[5][5].addWall(Wall::EAST);
-    grid[5][5].addWall(Wall::SOUTH);
-    grid[0][6].addWall(Wall::NORTH);
-    grid[1][6].addWall(Wall::EAST);
-    grid[2][6].addWall(Wall::EAST);
-    grid[5][6].addWall(Wall::EAST);
-    grid[5][6].addWall(Wall::SOUTH);
-    grid[5][6].addWall(Wall::WEST);
-    grid[0][7].addWall(Wall::NORTH);
-    grid[0][7].addWall(Wall::EAST);
-    grid[0][7].addWall(Wall::WEST);
-    grid[1][7].addWall(Wall::EAST);
-    grid[1][7].addWall(Wall::SOUTH);
-    grid[2][7].addWall(Wall::NORTH);
-    grid[2][7].addWall(Wall::EAST);
-    grid[2][7].addWall(Wall::WEST);
-    grid[3][7].addWall(Wall::SOUTH);
-    grid[3][7].addWall(Wall::EAST);
-    grid[4][7].addWall(Wall::NORTH);
-    grid[4][7].addWall(Wall::EAST);
-    grid[5][7].addWall(Wall::EAST);
-    grid[5][7].addWall(Wall::SOUTH);
-    grid[5][7].addWall(Wall::WEST);
+    grid[0][0]->addWall(Wall::NORTH);
+    grid[0][0]->addWall(Wall::WEST);
+    grid[1][0]->addWall(Wall::WEST);
+    grid[2][0]->addWall(Wall::WEST);
+    grid[2][0]->addWall(Wall::SOUTH);
+    grid[3][0]->addWall(Wall::WEST);
+    grid[3][0]->addWall(Wall::NORTH);
+    grid[4][0]->addWall(Wall::WEST);
+    grid[5][0]->addWall(Wall::WEST);
+    grid[5][0]->addWall(Wall::SOUTH);
+    grid[5][0]->addWall(Wall::EAST);
+    grid[0][1]->addWall(Wall::NORTH);
+    grid[2][1]->addWall(Wall::SOUTH);
+    grid[3][1]->addWall(Wall::NORTH);
+    grid[4][1]->addWall(Wall::SOUTH);
+    grid[4][1]->addWall(Wall::EAST);
+    grid[5][1]->addWall(Wall::SOUTH);
+    grid[5][1]->addWall(Wall::WEST);
+    grid[5][1]->addWall(Wall::NORTH);
+    grid[0][2]->addWall(Wall::NORTH);
+    grid[0][2]->addWall(Wall::EAST);
+    grid[2][2]->addWall(Wall::EAST);
+    grid[4][2]->addWall(Wall::EAST);
+    grid[4][2]->addWall(Wall::WEST);
+    grid[5][2]->addWall(Wall::SOUTH);
+    grid[0][3]->addWall(Wall::WEST);
+    grid[0][3]->addWall(Wall::EAST);
+    grid[0][3]->addWall(Wall::NORTH);
+    grid[2][3]->addWall(Wall::WEST);
+    grid[2][3]->addWall(Wall::EAST);
+    grid[4][3]->addWall(Wall::SOUTH);
+    grid[4][3]->addWall(Wall::WEST);
+    grid[4][3]->addWall(Wall::EAST);
+    grid[5][3]->addWall(Wall::SOUTH);
+    grid[5][3]->addWall(Wall::EAST);
+    grid[5][3]->addWall(Wall::NORTH);
+    grid[0][4]->addWall(Wall::NORTH);
+    grid[0][4]->addWall(Wall::WEST);
+    grid[2][4]->addWall(Wall::WEST);
+    grid[4][4]->addWall(Wall::WEST);
+    grid[4][4]->addWall(Wall::SOUTH);
+    grid[5][4]->addWall(Wall::EAST);
+    grid[5][4]->addWall(Wall::SOUTH);
+    grid[5][4]->addWall(Wall::WEST);
+    grid[0][5]->addWall(Wall::NORTH);
+    grid[5][5]->addWall(Wall::WEST);
+    grid[5][5]->addWall(Wall::EAST);
+    grid[5][5]->addWall(Wall::SOUTH);
+    grid[0][6]->addWall(Wall::NORTH);
+    grid[1][6]->addWall(Wall::EAST);
+    grid[2][6]->addWall(Wall::EAST);
+    grid[5][6]->addWall(Wall::EAST);
+    grid[5][6]->addWall(Wall::SOUTH);
+    grid[5][6]->addWall(Wall::WEST);
+    grid[0][7]->addWall(Wall::NORTH);
+    grid[0][7]->addWall(Wall::EAST);
+    grid[0][7]->addWall(Wall::WEST);
+    grid[1][7]->addWall(Wall::EAST);
+    grid[1][7]->addWall(Wall::SOUTH);
+    grid[2][7]->addWall(Wall::NORTH);
+    grid[2][7]->addWall(Wall::EAST);
+    grid[2][7]->addWall(Wall::WEST);
+    grid[3][7]->addWall(Wall::SOUTH);
+    grid[3][7]->addWall(Wall::EAST);
+    grid[4][7]->addWall(Wall::NORTH);
+    grid[4][7]->addWall(Wall::EAST);
+    grid[5][7]->addWall(Wall::EAST);
+    grid[5][7]->addWall(Wall::SOUTH);
+    grid[5][7]->addWall(Wall::WEST);
+}
+
+Firefighter::~Firefighter() {
+    for (int row = 0; row < 6; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            delete grid[row][col]; // Frigör varje dynamiskt allokerad Tile
+            grid[row][col] = nullptr; // Bra vana att nullställa pekare
+        }
+    }
 }

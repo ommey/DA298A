@@ -96,19 +96,19 @@ void setup()
           std::stoi(tokens[2], &column);
           if (tokens[0] == "Fire")
           {
-            firefighter.grid[row][column].addEvent(Event::FIRE);
+            firefighter.grid[row][column]->addEvent(Event::FIRE);
           }
           else if (tokens[0] == "Smoke")
           {
-            firefighter.grid[row][column].addEvent(Event::SMOKE);
+            firefighter.grid[row][column]->addEvent(Event::SMOKE);
           }
           else if (tokens[0] == "Victim")
           {
-            firefighter.grid[row][column].addEvent(Event::VICTIM);
+            firefighter.grid[row][column]->addEvent(Event::VICTIM);
           }
           else if (tokens[0] == "Hazmat")
           {
-            firefighter.grid[row][column].addEvent(Event::HAZMAT);
+            firefighter.grid[row][column]->addEvent(Event::HAZMAT);
           }  
         }        
       } 
@@ -124,7 +124,7 @@ void setup()
           } 
           else if (tokens[0] == "Victim")
           {
-            firefighter.grid[row][column].removeEvent(Event::VICTIM);
+            firefighter.grid[row][column]->removeEvent(Event::VICTIM);
           }         
         }
       }

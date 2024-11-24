@@ -82,12 +82,10 @@ void setup()
       std::vector<std::string> tokens = tokenize(msg.c_str());
       if (tokens.size() == 1 && tokens[0] == "Tick")
       {
-        Serial.println("Tick");
         firefighter.Tick();
       }
       else if (tokens.size() == 3 && tokens[0] == "Fire") {
         if (tryParseInt(tokens[1]) && tryParseInt(tokens[2])) {
-            Serial.println("Fire");        
           size_t row;
           size_t column;
           std::stoi(tokens[1], &row);
@@ -131,7 +129,7 @@ void setup()
           size_t column;
           std::stoi(tokens[1], &row);
           std::stoi(tokens[2], &column);
-          if (firefighter.currentTile.getRow() == row && firefighter.currentTile.getColumn() == column) {
+          if (firefighter.currentTile->getRow() == row && firefighter.currentTile->getColumn() == column) {
             firefighter.Die();
           }
           
@@ -169,7 +167,7 @@ void newConnectionCallback(uint32_t nodeId)
     Serial.printf("New Connection, nodeId = %u\n", nodeId);
 
     // Send this node's position to the new connection
-    String posMsg = "Pos:" + String(firefighter.currentTile.getRow()) + "," + String(firefighter.currentTile.getColumn());
+    String posMsg = "Pos:" + String(firefighter.currentTile->getRow()) + "," + String(firefighter.currentTile->getColumn());
     mesh.sendSingle(nodeId, posMsg);
 }
 

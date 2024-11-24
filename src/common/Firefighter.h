@@ -26,14 +26,15 @@ class Firefighter
 
         random_device rd;
         int id;
-        Tile lastTile;        
+        bool firtsTick;
         State state; 
-        Tile targetTile; 
-        Tile exitTile; 
+        Tile* lastTile;     
+        Tile* targetTile; 
+        Tile* exitTile; 
 
     public:
 
-        Tile currentTile;
+        Tile* currentTile;
         std::array<std::array<Tile, 8>, 6> grid;
         queue<String> messagesToBridge;  
 
@@ -47,10 +48,11 @@ class Firefighter
         void extinguishSmoke();
         void moveHazmat();
         void rescuePerson();
-        void move(Tile destination);
-        bool ChangeState(Tile tile);
+        void move(Tile& destination);
+        bool ChangeState(Tile& tile);
         void Die();
         void addWalls();
+        bool CheckSurroundingsForEvent();
 };
 
 #endif

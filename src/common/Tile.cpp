@@ -1,4 +1,5 @@
 #include "Tile.h"
+#include <arduino.h>
    
     Tile::Tile(int row, int column)
     {
@@ -29,11 +30,13 @@
 
     void Tile::addEvent(Event e) 
     {
+        Serial.println("Kom in i addEvent metoden");
         events |= static_cast<int>(e);
     }
 
     void Tile::removeEvent(Event e)
-        {
+    {
+        Serial.println("Kom in i removeEvent metoden");
         events &= ~static_cast<int>(e);
     }
 

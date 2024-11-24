@@ -77,7 +77,6 @@ void setup()
   mesh.setName(nodeName);
 
   mesh.onReceive([](String &from, String &msg) {
-    Serial.printf("Är i on receive: ");
     if (from == bridgeNAme) {
       std::vector<std::string> tokens = tokenize(msg.c_str());
       if (tokens.size() == 1 && tokens[0] == "Tick")
@@ -175,16 +174,17 @@ void informBridge(void *pvParameters)
 {
   while (1)
   {
-        Serial.printf("I inform bridge, queuen har %d meddelanden\n", firefighter.messagesToBridge.size());
-
-    if (!firefighter.messagesToBridge.empty()) {
+     if (!firefighter.messagesToBridge.empty())
+     {
       String msg = firefighter.messagesToBridge.front();
-      if (!mesh.sendSingle(bridgeNAme, msg)) {
+      Serial.println(msg);
+
+      if (!mesh.sendSingle(bridgeNAme, msg)) 
+      {
         Serial.println("Message send failed!");
       }
       firefighter.messagesToBridge.pop();
-    }
-    
+    }    
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }

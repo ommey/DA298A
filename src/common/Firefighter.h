@@ -23,8 +23,10 @@ enum class State
 class Firefighter
 {
     private:
-
         random_device rd;
+        std::mt19937 gen;
+        std::uniform_int_distribution<> row_dist;
+        std::uniform_int_distribution<> col_dist;
         int id;
         bool firtsTick;
         State state; 

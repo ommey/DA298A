@@ -1,7 +1,7 @@
 #include "Firefighter.h"
 #include "Tile.h"
 
-Firefighter::Firefighter()
+Firefighter::Firefighter() : gen(rd()), row_dist(0, 5), col_dist(0, 7)
 {
     for (int row = 0; row < 6; ++row) {
         for (int col = 0; col < 8; ++col) {
@@ -16,6 +16,10 @@ Firefighter::Firefighter()
     this->exitTile = &grid[0][0]; 
     this->state = State::SEARCHING;
     this->firtsTick = true;
+
+    std::mt19937 gen{rd()};
+    std::uniform_int_distribution<> row_dist(0, 5);
+    std::uniform_int_distribution<> col_dist(0, 7);
 
     addWalls();
 }
@@ -57,6 +61,11 @@ void Firefighter::move(Tile& destination)
     else if (destination.getColumn() > currentTile->getColumn() && !currentTile->hasWall(Wall::EAST)) 
     {
         new_column = currentTile->getColumn() + 1;
+    }
+    else 
+    {
+        move(grid[row_dist(gen)][col_dist(gen)]);
+        return;
     }
 
     if (new_row < 0 || new_row >= 5 || new_column < 0 || new_column >= 7) 
@@ -144,10 +153,6 @@ bool Firefighter::CheckSurroundingsForEvent()
 
 void Firefighter::searchForTarget()
 {
-    std::mt19937 gen(rd()); 
-    std::uniform_int_distribution<> row_dist(0, 5); 
-    std::uniform_int_distribution<> col_dist(0, 7); 
-
     if (!CheckSurroundingsForEvent())
     {
         move(grid[row_dist(gen)][col_dist(gen)]);
@@ -228,8 +233,6 @@ void Firefighter::Die()
         
 void Firefighter::Tick() 
 {
-    Serial.println("Kom in i Tick metoden");
-
     if (firtsTick)
     { 
         messagesToBridge.push("Firefighter from 0 0 to 0 0");
@@ -284,7 +287,6 @@ void Firefighter::addWalls()
     grid[0][1].addWall(Wall::NORTH);
     grid[2][1].addWall(Wall::SOUTH);
     grid[3][1].addWall(Wall::NORTH);
-    grid[3][1].addWall(Wall::EAST);
     grid[4][1].addWall(Wall::SOUTH);
     grid[4][1].addWall(Wall::EAST);
     grid[5][1].addWall(Wall::SOUTH);

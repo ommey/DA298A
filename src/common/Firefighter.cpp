@@ -44,7 +44,7 @@ void Firefighter::move(const Tile* destination)
     int new_row = currentTile->getRow();  
     int new_column = currentTile->getColumn(); 
           
-     if (destination->getColumn() < currentTile->getColumn() && !currentTile->hasWall(Wall::WEST)) 
+    if (destination->getColumn() < currentTile->getColumn() && !currentTile->hasWall(Wall::WEST)) 
     {
         new_column = currentTile->getColumn() - 1;
     }
@@ -52,11 +52,11 @@ void Firefighter::move(const Tile* destination)
     {
         new_column = currentTile->getColumn() + 1;
     }   
-    if (destination->getRow() < currentTile->getRow() && !currentTile->hasWall(Wall::NORTH)) 
+    if (currentTile->getColumn() == new_column && destination->getRow() < currentTile->getRow() && !currentTile->hasWall(Wall::NORTH)) 
     {
         new_row = currentTile->getRow() - 1;
     }
-    else if (destination->getRow() > currentTile->getRow() && !currentTile->hasWall(Wall::SOUTH)) 
+    else if (currentTile->getColumn() == new_column && destination->getRow() > currentTile->getRow() && !currentTile->hasWall(Wall::SOUTH)) 
     {
         new_row = currentTile->getRow() + 1;
     }
@@ -77,29 +77,30 @@ void Firefighter::move(const Tile* destination)
 
 bool Firefighter::ChangeState(Tile* tile)
 {
-    targetTile = tile;
+    bool hasEvent = true;
 
-    if (targetTile->hasEvent(Event::VICTIM))
+    if (tile->hasEvent(Event::VICTIM))
     {
         state = State::RESCUING_PERSON;
-        return true;
+        targetTile = tile;
     }
-    else if (targetTile->hasEvent(Event::HAZMAT))
-    {
-        state = State::MOVING_HAZMAT;
-        return true;
-    }
-    else if (targetTile->hasEvent(Event::FIRE))
+    else if (tile->hasEvent(Event::FIRE))
     {
         state = State::PUTTING_OUT_FIRE;
-        return true;
+        targetTile = tile;
     }
-    else if (targetTile->hasEvent(Event::SMOKE))
+    else if (tile->hasEvent(Event::SMOKE))
     {
         state = State::PUTTING_OUT_SMOKE;
-        return true;
+        targetTile = tile;
     }
-    return false; 
+    else if (tile->hasEvent(Event::HAZMAT))
+    {
+        state = State::MOVING_HAZMAT;
+        targetTile = tile;
+    }
+    else { hasEvent = false; }
+    return hasEvent; 
 }  
 
 bool Firefighter::CheckSurroundingsForEvent()
@@ -146,6 +147,8 @@ bool Firefighter::CheckSurroundingsForEvent()
 
 void Firefighter::searchForTarget()
 {
+        Serial.println("Target tile i search:" + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
+
     if (!CheckSurroundingsForEvent())
     {
         int random_row = row_dist(gen);
@@ -157,6 +160,13 @@ void Firefighter::searchForTarget()
             return;
         }
         move(grid[random_row][random_col]);
+    }
+    else
+    {
+        if (currentTile != targetTile)
+        {
+            move(targetTile);
+        }
     }
 }
 
@@ -171,6 +181,8 @@ void Firefighter::moveToTarget()
 
 void Firefighter::extinguishFire()
 {
+    Serial.println("Target tile i extinguish fire:" + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
+
     targetTile->removeEvent(Event::FIRE);
     targetTile->addEvent(Event::SMOKE);
     state = State::PUTTING_OUT_SMOKE;
@@ -180,6 +192,7 @@ void Firefighter::extinguishFire()
 
 void Firefighter::extinguishSmoke()
 {
+    Serial.println("Target tile i extinguish smoke:" + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
     targetTile->removeEvent(Event::SMOKE);
     if (!CheckSurroundingsForEvent())
     {

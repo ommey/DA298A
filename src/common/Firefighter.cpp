@@ -62,7 +62,8 @@ void Firefighter::move(Tile& destination)
     {
         new_column = currentTile->getColumn() + 1;
     }
-    else 
+    
+    if (currentTile->getRow() == new_row && currentTile->getColumn() == new_column)
     {
         move(grid[row_dist(gen)][col_dist(gen)]);
         return;
@@ -86,22 +87,22 @@ bool Firefighter::ChangeState(Tile& tile)
 {
     targetTile = &tile;
 
-    if (tile.hasEvent(Event::VICTIM))
+    if (targetTile->hasEvent(Event::VICTIM))
     {
         state = State::RESCUING_PERSON;
         return true;
     }
-    else if (tile.hasEvent(Event::HAZMAT))
+    else if (targetTile->hasEvent(Event::HAZMAT))
     {
         state = State::MOVING_HAZMAT;
         return true;
     }
-    else if (tile.hasEvent(Event::FIRE))
+    else if (targetTile->hasEvent(Event::FIRE))
     {
         state = State::PUTTING_OUT_FIRE;
         return true;
     }
-    else if (tile.hasEvent(Event::SMOKE))
+    else if (targetTile->hasEvent(Event::SMOKE))
     {
         state = State::PUTTING_OUT_SMOKE;
         return true;

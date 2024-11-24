@@ -15,8 +15,8 @@ enum class Wall : int
 {
     NORTH  = 0b0001,
     EAST   = 0b0010,
-    SOUTH = 0b0100,
-    WEST = 0b1000
+    SOUTH  = 0b0100,
+    WEST   = 0b1000
 };
 
 class Tile

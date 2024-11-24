@@ -84,16 +84,18 @@ void setup()
       std::vector<std::string> tokens = tokenize(msg.c_str());
       if (tokens[0] == "Tick")
       {
+        firefighter.printGrid();
         firefighter.Tick();
       }
       else if (tokens.size() == 3) 
       {
         if (tryParseInt(tokens[1]) && tryParseInt(tokens[2])) 
         {
-          size_t row;
-          size_t column;
-          std::stoi(tokens[1], &row);
-          std::stoi(tokens[2], &column);
+          size_t row = 0;
+          size_t column = 0;
+          row = std::stoi(tokens[1]);
+          column = std::stoi(tokens[2]);
+          
           if (tokens[0] == "Fire")
           {
             firefighter.grid[row][column]->addEvent(Event::FIRE);

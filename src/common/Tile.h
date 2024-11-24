@@ -25,14 +25,13 @@ class Tile
 
         int row;
         int column;
-        int events = 0b0000; 
-        int walls = 0b0000; 
+        int events; 
+        int walls; 
 
     public:
 
         int firefighters;
         
-        Tile() : row(0), column(0) {}
         Tile(int row, int column);
         void addWall(Wall wall);
         bool hasWall(Wall wall) const;

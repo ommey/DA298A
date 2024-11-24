@@ -4,8 +4,10 @@
 Firefighter::Firefighter() : gen(rd()), row_dist(0, 5), col_dist(0, 7) 
 {
     // Allokera minne för varje Tile och spara pekarna i grid
-    for (int row = 0; row < 6; ++row) {
-        for (int col = 0; col < 8; ++col) {
+    for (int row = 0; row < 6; ++row)
+    {
+        for (int col = 0; col < 8; ++col)
+        {
             grid[row][col] = new Tile(row, col);
         }
     }
@@ -33,9 +35,7 @@ int Firefighter::getId() const
 }    
 
 void Firefighter::move(const Tile* destination)
-{
-    Serial.println("Kom in i move metoden");
-    
+{  
     String msg = "Firefighter from " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()) + " to ";
 
     lastTile->firefighters--;
@@ -44,6 +44,14 @@ void Firefighter::move(const Tile* destination)
     int new_row = currentTile->getRow();  
     int new_column = currentTile->getColumn(); 
           
+     if (destination->getColumn() < currentTile->getColumn() && !currentTile->hasWall(Wall::WEST)) 
+    {
+        new_column = currentTile->getColumn() - 1;
+    }
+    else if (destination->getColumn() > currentTile->getColumn() && !currentTile->hasWall(Wall::EAST)) 
+    {
+        new_column = currentTile->getColumn() + 1;
+    }   
     if (destination->getRow() < currentTile->getRow() && !currentTile->hasWall(Wall::NORTH)) 
     {
         new_row = currentTile->getRow() - 1;
@@ -52,21 +60,7 @@ void Firefighter::move(const Tile* destination)
     {
         new_row = currentTile->getRow() + 1;
     }
-    if (destination->getColumn() < currentTile->getColumn() && !currentTile->hasWall(Wall::WEST)) 
-    {
-        new_column = currentTile->getColumn() - 1;
-    }
-    else if (destination->getColumn() > currentTile->getColumn() && !currentTile->hasWall(Wall::EAST)) 
-    {
-        new_column = currentTile->getColumn() + 1;
-    }
     
-    if (currentTile->getRow() == new_row && currentTile->getColumn() == new_column)
-    {
-        move(grid[row_dist(gen)][col_dist(gen)]);
-        return;
-    }
-
     if (new_row < 0 || new_row >= 6 || new_column < 0 || new_column >= 8)
     {
         Serial.println("Fel: ny position utanför gränserna.");
@@ -154,7 +148,15 @@ void Firefighter::searchForTarget()
 {
     if (!CheckSurroundingsForEvent())
     {
-        move(grid[row_dist(gen)][col_dist(gen)]);
+        int random_row = row_dist(gen);
+        int random_col = col_dist(gen);
+
+        if(currentTile->getRow() == random_row && currentTile->getColumn() == random_col)
+        {
+            searchForTarget();
+            return;
+        }
+        move(grid[random_row][random_col]);
     }
 }
 
@@ -351,3 +353,16 @@ Firefighter::~Firefighter() {
         }
     }
 }
+
+void Firefighter::printGrid() {
+    for (int row = 0; row < 6; ++row) {
+        for (int col = 0; col < 8; ++col) {
+            if (grid[row][col]->hasEvent(Event::FIRE)) 
+            {
+                Serial.print("Tile has fire: " + String(row) + " " + String(col));
+            } 
+        }
+    }
+}
+
+

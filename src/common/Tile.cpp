@@ -6,11 +6,13 @@
         this->row = row;
         this->column = column;
         this->firefighters = 0;
+        this->events = false;
+        this->walls = false;
     }
 
     void Tile::addWall(Wall wall) 
     {
-        walls |= static_cast<int>(wall);
+        this->walls |= static_cast<int>(wall);
     }
 
     bool Tile::hasWall(Wall wall) const 
@@ -30,14 +32,13 @@
 
     void Tile::addEvent(Event e) 
     {
-        events |= static_cast<int>(e);
+        this->events |= static_cast<int>(e);
     }
 
     void Tile::removeEvent(Event e)
     {
-        events &= ~static_cast<int>(e);
+        this->events &= ~static_cast<int>(e);
     }
-
     bool Tile::hasEvent(Event e) 
     {
         return (events & static_cast<int>(e)) != 0;

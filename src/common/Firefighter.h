@@ -61,6 +61,8 @@ class Firefighter
         // Helper function to allocate memory for grid
         void initializeGrid();
         void cleanupGrid();
+
+        void printGrid();
 };
 
 #endif  // FIREFIGHTER_H_

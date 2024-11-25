@@ -1,13 +1,18 @@
 #include <Arduino.h>
-#include <SPI.h>  // så kompilatorn inte klagar
+#include <TFT_eSPI.h>
+#include <SPI.h>
 #include "namedMesh.h"
 
 #define   MESH_SSID       "meshNetwork"
 #define   MESH_PASSWORD   "meshPassword"
 #define   MESH_PORT       5555
 
+TFT_eSPI tft = TFT_eSPI();
+
 String nodeName = "bridge"; // namnet på brygg-noden
 namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder
+
+void printToDisplay(String message);
 
 void updateFromGUI(void *pvParameters){
     while(1) {
@@ -20,14 +25,18 @@ void updateFromGUI(void *pvParameters){
                 if (receiver_node == "all") {
                     if (mesh.sendBroadcast(message)) {
                         Serial.println("Message sent to all");
+                        printToDisplay("Message sent to all");
                     } else {
                         Serial.println("Failed to send broadcast");
+                        printToDisplay("Failed to send broadcast");
                     }
                 } else {
                     if (mesh.sendSingle(receiver_node, message)) {
                         Serial.println("Message sent to " + receiver_node);
+                        printToDisplay("Message sent to " + receiver_node);
                     } else {
                         Serial.println("Failed to send to " + receiver_node);
+                        printToDisplay("Failed to send to " + receiver_node);
                     }
                 }
             } else {
@@ -36,6 +45,12 @@ void updateFromGUI(void *pvParameters){
         } 
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
+}
+
+void printToDisplay(String message) {
+    tft.fillScreen(TFT_BLUE);
+    tft.setCursor(10, 10);
+    tft.print(message);
 }
 
 void meshUpdate(void *pvParameters){
@@ -65,6 +80,7 @@ void setup() {
 
   mesh.onReceive([](String &from, String &msg) {
     Serial.println(msg.c_str());
+    printToDisplay(msg);
   });
 
   mesh.onChangedConnections([]() {
@@ -73,6 +89,14 @@ void setup() {
 
     xTaskCreate(meshUpdate, "meshUpdate", 10000, NULL, 1, NULL); // Skapa en task som uppdaterar meshen
     xTaskCreate(updateFromGUI, "updateFromGUI", 10000, NULL, 1, NULL); // Skapa en task som lyssnar på Serial
+
+    // Init display
+    tft.init();
+    tft.setRotation(0);
+    tft.fillScreen(TFT_BLUE);
+    tft.setTextColor(TFT_WHITE, TFT_BLUE);
+    tft.setTextSize(1);
+    tft.setCursor(10, 10);
 }
 
 void loop() {}  // inget görs här, aktiviteter sköts i freeRTOS tasks

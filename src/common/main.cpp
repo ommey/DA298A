@@ -134,11 +134,7 @@ void setup() {
   Serial.setTimeout(50);
 
   // Init hardware, buttons and TFT display
-  if(hardwareInit()) {
-    Serial.println("Hardware init success");
-  } else {
-    Serial.println("Hardware init failed");
-  }
+  hardwareInit();
 
   // Attach interrupts to the button pins
   attachInterrupt(digitalPinToInterrupt(BUTTON_1), handleButton1, FALLING);

@@ -178,6 +178,7 @@ void informBridge(void *pvParameters)
   while (1)
   {
         Serial.printf("I inform bridge, queuen har %d meddelanden\n", firefighter.messagesToBridge.size());
+        Serial.printf(firefighter.messagesToBridge.front().c_str());
 
     if (!firefighter.messagesToBridge.empty()) {
       String msg = firefighter.messagesToBridge.front();

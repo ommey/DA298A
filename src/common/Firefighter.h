@@ -13,6 +13,8 @@ class Firefighter {
         std::array<std::array<Tile, 6>, 8> grid;
         Tile targetTile;
         bool hasTarget = false;
+        bool carryingPerson = false;
+        bool carryingHazmat = false;
 
     public:
         Firefighter(int id, Tile currentTile, const std::array<std::array<Tile, 6>, 8>& grid);
@@ -32,6 +34,12 @@ class Firefighter {
         Tile getTargetTile();
         void setHasTarget(const bool hasTarget);
         bool getHasTarget() const;
+        void setCarryingPerson(const bool carryingPerson);
+        bool getCarryingPerson() const;
+        void setCarryingHazmat(const bool carryingHazmat);
+        bool getCarryingHazmat() const;
+        void addEvent(int x, int y, int event);
+        void removeEvent(int x, int y, int event);
 };
 
 #endif

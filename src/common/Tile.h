@@ -22,4 +22,4 @@ class Tile {
         int getEvents() const;
 };
 
-#endif // TILE_H_
+#endif

@@ -95,7 +95,7 @@ void setup() {
     tft.setRotation(0);
     tft.fillScreen(TFT_BLUE);
     tft.setTextColor(TFT_WHITE, TFT_BLUE);
-    tft.setTextSize(1);
+    tft.setTextSize(2);
     tft.setCursor(10, 10);
 }
 

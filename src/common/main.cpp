@@ -10,6 +10,7 @@
 #include <cmath>
 #include <unordered_map>
 #include <string>
+#include "hardware_config.h"
 
 using namespace std;
 
@@ -50,6 +51,14 @@ String nodeName; // namnet på noden
 namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
 std::map<String, std::pair<int, int>> contactList;  // Map of node IDs to their positions
 queue<String> messagesToBridge;  //kö för meddelanden som ska skickas till bryggan | !push för att lägga till!
+
+volatile bool button1Pressed = false;
+volatile bool button2Pressed = false;
+volatile bool button3Pressed = false;
+
+void IRAM_ATTR handleButton1() { button1Pressed = true; }
+void IRAM_ATTR handleButton2() { button2Pressed = true; }
+void IRAM_ATTR handleButton3() { button3Pressed = true; }
 
 void informBridge(void *pvParameters);  //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
 void meshUpdate(void *pvParameters);  //skit i denna, till för pinlessmesh,  freertos task funktion som uppdaterar meshen
@@ -123,6 +132,19 @@ void changeState(){
 void setup() {
   Serial.begin(115200);
   Serial.setTimeout(50);
+
+  // Init hardware, buttons and TFT display
+  if(hardwareInit()) {
+    Serial.println("Hardware init success");
+  } else {
+    Serial.println("Hardware init failed");
+  }
+
+  // Attach interrupts to the button pins
+  attachInterrupt(digitalPinToInterrupt(BUTTON_1), handleButton1, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_2), handleButton2, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_3), handleButton3, FALLING);
+
 
   //mesh.setDebugMsgTypes(ERROR | CONNECTION);
   mesh.init(MESH_SSID, MESH_PASSWORD, MESH_PORT);  // Starta meshen
@@ -543,7 +565,24 @@ void handlePickingUpMaterial() {
 }
 
 // inget görs här, aktiviteter sköts i freeRTOS tasks
-void loop() {}
+void loop() {
+  // Check if buttons were pressed and handle accordingly
+  if (button1Pressed) {
+    button1Pressed = false;
+    Serial.println("Button 1 pressed");
+    // Handle button 1 press
+  }
+  if (button2Pressed) {
+    button2Pressed = false;
+    Serial.println("Button 2 pressed");
+    // Handle button 2 press
+  }
+  if (button3Pressed) {
+    button3Pressed = false;
+    Serial.println("Button 3 pressed");
+    // Handle button 3 press
+  }
+}
 
 void fireFighterStuff() {
     Serial.printf("\n Coordinates of firefighter %d: %d, %d", FF.getId(), FF.getCurrentTile().getX(), FF.getCurrentTile().getY());

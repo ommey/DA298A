@@ -15,8 +15,8 @@ enum class Wall : int
 {
     NORTH  = 0b0001,
     EAST   = 0b0010,
-    SOUTH = 0b0100,
-    WEST = 0b1000
+    SOUTH  = 0b0100,
+    WEST   = 0b1000
 };
 
 class Tile
@@ -25,14 +25,13 @@ class Tile
 
         int row;
         int column;
-        int events = 0b0000; 
-        int walls = 0b0000; 
+        int events; 
+        int walls; 
 
     public:
 
         int firefighters;
         
-        Tile() : row(0), column(0) {}
         Tile(int row, int column);
         void addWall(Wall wall);
         bool hasWall(Wall wall) const;

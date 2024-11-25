@@ -1,11 +1,11 @@
+#ifndef FIREFIGHTER_H_
+#define FIREFIGHTER_H_
+
 #include "Tile.h"
 #include <array>
 #include <random>
 #include <queue>
 #include <arduino.h>
-
-#ifndef FIREFIGHTER_H_
-#define FIREFIGHTER_H_
 
 using namespace std;
 
@@ -23,21 +23,26 @@ enum class State
 class Firefighter
 {
     private:
-
         random_device rd;
+        std::mt19937 gen;
+        std::uniform_int_distribution<> row_dist;
+        std::uniform_int_distribution<> col_dist;
+        bool firstTick;
         int id;
-        Tile lastTile;        
         State state; 
-        Tile targetTile; 
-        Tile exitTile; 
+        Tile* lastTile;     
+        Tile* targetTile; 
+        Tile* exitTile; 
 
     public:
-
-        Tile currentTile;
-        std::array<std::array<Tile, 8>, 6> grid;
-        queue<String> messagesToBridge;  
+        // Grid of pointers to Tile objects
+        Tile* grid[6][8]; // Dynamically allocated grid of pointers
+        Tile* currentTile;
+        queue<String> messagesToBridge;
 
         Firefighter();
+        ~Firefighter();  // Destructor for cleaning up dynamic memory
+
         void setId(int id);
         int getId() const;    
         void Tick(); 
@@ -47,10 +52,17 @@ class Firefighter
         void extinguishSmoke();
         void moveHazmat();
         void rescuePerson();
-        void move(Tile destination);
-        bool ChangeState(Tile tile);
+        void move(const Tile* destination);
+        bool ChangeState(Tile* tile);
         void Die();
         void addWalls();
+        bool CheckSurroundingsForEvent();
+
+        // Helper function to allocate memory for grid
+        void initializeGrid();
+        void cleanupGrid();
+
+        void printGrid();
 };
 
-#endif
+#endif  // FIREFIGHTER_H_

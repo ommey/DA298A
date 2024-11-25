@@ -76,75 +76,58 @@ void setup()
   nodeName = String(mesh.getNodeId());  //namnet kan modifieras mes.getNodeId() är alltid unikt
   mesh.setName(nodeName);
 
-  mesh.onReceive([](String &from, String &msg) {
-    Serial.printf("Är i on receive: ");
+  mesh.onReceive([](String &from, String &msg)
+   {
+    Serial.println(msg.c_str());
+    
     if (from == bridgeNAme) {
       std::vector<std::string> tokens = tokenize(msg.c_str());
-      if (tokens.size() == 1 && tokens[0] == "Tick")
+      if (tokens[0] == "Tick")
       {
-        Serial.println("Tick");
+        firefighter.printGrid();
         firefighter.Tick();
       }
-      else if (tokens.size() == 3 && tokens[0] == "Fire") {
-        if (tryParseInt(tokens[1]) && tryParseInt(tokens[2])) {
-            Serial.println("Fire");        
-          size_t row;
-          size_t column;
-          std::stoi(tokens[1], &row);
-          std::stoi(tokens[2], &column);
-          firefighter.grid[row][column].addEvent(Event::FIRE);
-        }
-      }
-      else if (tokens.size() == 3 && tokens[0] == "Smoke") {
-        if (tryParseInt(tokens[1]) && tryParseInt(tokens[2])) {
-          size_t row;
-          size_t column;
-          std::stoi(tokens[1], &row);
-          std::stoi(tokens[2], &column);
-          firefighter.grid[row][column].addEvent(Event::SMOKE);
-        }
-      }
-      else if (tokens.size() == 3 && tokens[0] == "Victim")
+      else if (tokens.size() == 3) 
       {
-        if (tryParseInt(tokens[1]) && tryParseInt(tokens[2])) {
-          size_t row;
-          size_t column;
-          std::stoi(tokens[1], &row);
-          std::stoi(tokens[2], &column);
-          firefighter.grid[row][column].addEvent(Event::VICTIM);
-        }
-      }
-      else if (tokens.size() == 3 && tokens[0] == "Hazmat")
-      {
-        if (tryParseInt(tokens[1]) && tryParseInt(tokens[2])) {
-          size_t row;
-          size_t column;
-          std::stoi(tokens[1], &row);
-          std::stoi(tokens[2], &column);
-          firefighter.grid[row][column].addEvent(Event::HAZMAT);
-        }
-      }
-      else if (tokens.size() == 4 && tokens[0] == "Firefighter" && tokens[1] == "dead")
+        if (tryParseInt(tokens[1]) && tryParseInt(tokens[2])) 
+        {
+          size_t row = 0;
+          size_t column = 0;
+          row = std::stoi(tokens[1]);
+          column = std::stoi(tokens[2]);
+          
+          if (tokens[0] == "Fire")
+          {
+            firefighter.grid[row][column]->addEvent(Event::FIRE);
+          }
+          else if (tokens[0] == "Smoke")
+          {
+            firefighter.grid[row][column]->addEvent(Event::SMOKE);
+          }
+          else if (tokens[0] == "Victim")
+          {
+            firefighter.grid[row][column]->addEvent(Event::VICTIM);
+          }
+          else if (tokens[0] == "Hazmat")
+          {
+            firefighter.grid[row][column]->addEvent(Event::HAZMAT);
+          }  
+        }        
+      } 
+      else if (tokens.size() == 4 && tokens[1] == "dead")
       {
         if (tryParseInt(tokens[2]) && tryParseInt(tokens[3])) {
           size_t row;
           size_t column;
           std::stoi(tokens[1], &row);
           std::stoi(tokens[2], &column);
-          if (firefighter.currentTile.getRow() == row && firefighter.currentTile.getColumn() == column) {
+          if (tokens[0] == "Firefighter" && firefighter.currentTile->getRow() == row && firefighter.currentTile->getColumn() == column) {
             firefighter.Die();
-          }
-          
-        }
-      }
-      else if (tokens.size() == 4 && tokens[0] == "Victim" && tokens[1] == "dead")
-      {
-        if (tryParseInt(tokens[1]) && tryParseInt(tokens[2])) {
-          size_t row;
-          size_t column;
-          std::stoi(tokens[1], &row);
-          std::stoi(tokens[2], &column);
-          firefighter.grid[row][column].removeEvent(Event::VICTIM);
+          } 
+          else if (tokens[0] == "Victim")
+          {
+            firefighter.grid[row][column]->removeEvent(Event::VICTIM);
+          }         
         }
       }
     }
@@ -169,7 +152,7 @@ void newConnectionCallback(uint32_t nodeId)
     Serial.printf("New Connection, nodeId = %u\n", nodeId);
 
     // Send this node's position to the new connection
-    String posMsg = "Pos:" + String(firefighter.currentTile.getRow()) + "," + String(firefighter.currentTile.getColumn());
+    String posMsg = "Pos:" + String(firefighter.currentTile->getRow()) + "," + String(firefighter.currentTile->getColumn());
     mesh.sendSingle(nodeId, posMsg);
 }
 
@@ -177,17 +160,17 @@ void informBridge(void *pvParameters)
 {
   while (1)
   {
-        Serial.printf("I inform bridge, queuen har %d meddelanden\n", firefighter.messagesToBridge.size());
-        Serial.printf(firefighter.messagesToBridge.front().c_str());
-
-    if (!firefighter.messagesToBridge.empty()) {
+     if (!firefighter.messagesToBridge.empty())
+     {
       String msg = firefighter.messagesToBridge.front();
-      if (!mesh.sendSingle(bridgeNAme, msg)) {
+      Serial.println(msg);
+
+      if (!mesh.sendSingle(bridgeNAme, msg)) 
+      {
         Serial.println("Message send failed!");
       }
       firefighter.messagesToBridge.pop();
-    }
-    
+    }    
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }

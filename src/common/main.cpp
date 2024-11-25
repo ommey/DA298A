@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "namedMesh.h"
 #include "Firefighter.h"
+#include "hardware_config.h"
 
 #define   MESH_SSID       "meshNetwork"
 #define   MESH_PASSWORD   "meshPassword"
@@ -12,6 +13,14 @@ String bridgeNAme = "bridge";  // namnet på brygga-noden
 String nodeName;  // namnet på noden
 namedMesh mesh;  //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
 
+volatile bool button1Pressed = false;
+volatile bool button2Pressed = false;
+volatile bool button3Pressed = false;
+
+void IRAM_ATTR handleButton1() { button1Pressed = true; }
+void IRAM_ATTR handleButton2() { button2Pressed = true; }
+void IRAM_ATTR handleButton3() { button3Pressed = true; }
+
 void informBridge(void *pvParameters);  //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
 void meshUpdate(void *pvParameters);  //skit i denna, till för pinlessmesh,  freertos task funktion som uppdaterar meshen
 void doFireFighterStuff(void *pvParameters);  // freertos task funktion som gör branmansjobbet kontinueligt
@@ -21,6 +30,19 @@ void setup() {
   Serial.begin(115200);
   Serial.setTimeout(50);
   hoesHolder = Firefighter();  //skapa en brandman
+
+  // Init hardware, buttons and TFT display
+  if(hardwareInit()) {
+    Serial.println("Hardware init success");
+  } else {
+    Serial.println("Hardware init failed");
+  }
+
+  // Attach interrupts to the button pins
+  attachInterrupt(digitalPinToInterrupt(BUTTON_1), handleButton1, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_2), handleButton2, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_3), handleButton3, FALLING);
+
 
   //mesh.setDebugMsgTypes(ERROR | CONNECTION);
   mesh.init(MESH_SSID, MESH_PASSWORD, MESH_PORT);  // Starta meshen
@@ -55,7 +77,24 @@ void setup() {
 }
 
 // inget görs här, aktiviteter sköts i freeRTOS tasks
-void loop() {}
+void loop() {
+  // Check if buttons were pressed and handle accordingly
+  if (button1Pressed) {
+    button1Pressed = false;
+    Serial.println("Button 1 pressed");
+    // Handle button 1 press
+  }
+  if (button2Pressed) {
+    button2Pressed = false;
+    Serial.println("Button 2 pressed");
+    // Handle button 2 press
+  }
+  if (button3Pressed) {
+    button3Pressed = false;
+    Serial.println("Button 3 pressed");
+    // Handle button 3 press
+  }
+}
 
 void fireFighterStuff(){
   Serial.print("Branmannen inom mig jobbar hårt "); //här går tillståndsmaskinen in istället för denna printout

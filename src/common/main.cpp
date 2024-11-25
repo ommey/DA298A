@@ -56,9 +56,18 @@ volatile bool button1Pressed = false;
 volatile bool button2Pressed = false;
 volatile bool button3Pressed = false;
 
-void IRAM_ATTR handleButton1() { button1Pressed = true; }
-void IRAM_ATTR handleButton2() { button2Pressed = true; }
-void IRAM_ATTR handleButton3() { button3Pressed = true; }
+void IRAM_ATTR handleButton1() {
+    printToDisplay("Button 1 pressed");  // Test för att se att knapptryckning fungerar
+    button1Pressed = !button1Pressed;
+}
+void IRAM_ATTR handleButton2() {
+    printToDisplay("Button 2 pressed");  // Test för att se att knapptryckning fungerar
+    button2Pressed = !button2Pressed;
+}
+void IRAM_ATTR handleButton3() {
+    printToDisplay("Button 3 pressed");  // Test för att se att knapptryckning fungerar
+    button3Pressed = !button3Pressed;
+}
 
 void informBridge(void *pvParameters);  //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
 void meshUpdate(void *pvParameters);  //skit i denna, till för pinlessmesh,  freertos task funktion som uppdaterar meshen
@@ -154,6 +163,9 @@ void setup() {
       std::vector<std::string> tokens = tokenize(msg.c_str());
       if (tokens.size() == 1 && tokens[0] == "Tick")
       {
+        setLEDColor(255, 255, 255);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        setLEDColor(0, 0, 0);
         fireFighterStuff();
       }
       else if (tokens.size() == 3 && tokens[0] == "Fire") {

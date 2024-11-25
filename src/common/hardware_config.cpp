@@ -42,6 +42,7 @@ void clearDisplay() {
 
 void setLEDColor(uint8_t r, uint8_t g, uint8_t b) {
     // Not implemented yet
-    RGB_LED.setPixelColor(1, RGB_LED.Color(r, g, b));
+    RGB_LED.setPixelColor(0, RGB_LED.Color(r, g, b));
+    RGB_LED.show();
 }
 

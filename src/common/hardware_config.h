@@ -14,10 +14,10 @@
 extern TFT_eSPI tft;
 extern Adafruit_NeoPixel RGB_LED;
 
-void hardwareInit() {};
-void printToDisplay(String message) {};
+void hardwareInit();
+void printToDisplay(String message);
 void printToDisplay(const String& message, int x, int y);
-void clearDisplay() {};
+void clearDisplay();
 void setLEDColor(uint8_t r, uint8_t g, uint8_t b);
 
 #endif // HARDWARE_CONFIG_H

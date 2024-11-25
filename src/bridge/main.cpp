@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <SPI.h>  // så kompilatorn inte klagar
 #include "namedMesh.h"
 
 #define   MESH_SSID       "meshNetwork"

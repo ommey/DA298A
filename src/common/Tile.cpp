@@ -5,7 +5,6 @@
     {
         this->row = row;
         this->column = column;
-        this->firefighters = 0;
         this->events = false;
         this->walls = false;
     }

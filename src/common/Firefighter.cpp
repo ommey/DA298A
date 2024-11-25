@@ -1,7 +1,7 @@
 #include "Firefighter.h"
 #include "Tile.h"
 
-Firefighter::Firefighter() : gen(rd()), row_dist(0, 5), col_dist(0, 7) 
+Firefighter::Firefighter() : gen(rd()), dist(1, 4) 
 {
     // Allokera minne för varje Tile och spara pekarna i grid
     for (int row = 0; row < 6; ++row)
@@ -18,7 +18,8 @@ Firefighter::Firefighter() : gen(rd()), row_dist(0, 5), col_dist(0, 7)
     this->targetTile = grid[0][0];
     this->exitTile = grid[0][0]; 
     this->state = State::SEARCHING;
-    this->firstTick = true;
+    this->hasMission = false;
+    
 
     addWalls();
 }
@@ -36,27 +37,25 @@ int Firefighter::getId() const
 
 void Firefighter::move(const Tile* destination)
 {  
-    String msg = "Firefighter from " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()) + " to ";
-
-    lastTile->firefighters--;
     lastTile = currentTile;
 
     int new_row = currentTile->getRow();  
     int new_column = currentTile->getColumn(); 
           
-    if (destination->getColumn() < currentTile->getColumn() && !currentTile->hasWall(Wall::WEST)) 
+    if (destination->getColumn() < currentTile->getColumn()) 
     {
         new_column = currentTile->getColumn() - 1;
     }
-    else if (destination->getColumn() > currentTile->getColumn() && !currentTile->hasWall(Wall::EAST)) 
+    else if (destination->getColumn() > currentTile->getColumn()) 
     {
         new_column = currentTile->getColumn() + 1;
-    }   
-    if (currentTile->getColumn() == new_column && destination->getRow() < currentTile->getRow() && !currentTile->hasWall(Wall::NORTH)) 
+    } 
+
+    if (currentTile->getColumn() == new_column && destination->getRow() < currentTile->getRow()) 
     {
         new_row = currentTile->getRow() - 1;
     }
-    else if (currentTile->getColumn() == new_column && destination->getRow() > currentTile->getRow() && !currentTile->hasWall(Wall::SOUTH)) 
+    else if (currentTile->getColumn() == new_column && destination->getRow() > currentTile->getRow()) 
     {
         new_row = currentTile->getRow() + 1;
     }
@@ -68,9 +67,7 @@ void Firefighter::move(const Tile* destination)
     }
 
     currentTile = grid[new_row][new_column];
-    currentTile->firefighters++;
-
-    msg += String(currentTile->getRow()) + " " + String(currentTile->getColumn());
+    String msg = "Firefighter from " + String(lastTile->getRow()) + " " + String(lastTile->getColumn()) + " to " + currentTile->getRow() + " " + currentTile->getColumn();
     messagesToBridge.push(msg);
 }
 
@@ -79,9 +76,13 @@ bool Firefighter::ChangeState(Tile* tile)
 {
     bool hasEvent = true;
 
-    if (tile->hasEvent(Event::VICTIM))
+    if (hasMission)
     {
-        state = State::RESCUING_PERSON;
+        state = State::MOVING_TO_TARGET;
+    }
+    else if (tile->hasEvent(Event::VICTIM))
+    {
+        state = State::WAITING;
         targetTile = tile;
     }
     else if (tile->hasEvent(Event::FIRE))
@@ -145,37 +146,94 @@ bool Firefighter::CheckSurroundingsForEvent()
     return false;   
 }
 
+bool Firefighter::atDeadEnd()
+{
+    int walls = 0;
+
+    if(currentTile->hasWall(Wall::NORTH))
+    {
+        walls++;
+    }
+    if(currentTile->hasWall(Wall::EAST))
+    {
+        walls++;
+    }
+    if(currentTile->hasWall(Wall::SOUTH))
+    {
+        walls++;
+    }
+    if(currentTile->hasWall(Wall::WEST))
+    {
+        walls++;
+    }
+    if(walls == 3)
+    {
+        return true;
+    }
+}
+
+
 void Firefighter::searchForTarget()
 {
-        Serial.println("Target tile i search:" + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
+    Serial.println("Target tile i search:" + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
 
-    if (!CheckSurroundingsForEvent())
+    if (atDeadEnd())
     {
-        int random_row = row_dist(gen);
-        int random_col = col_dist(gen);
-
-        if(currentTile->getRow() == random_row && currentTile->getColumn() == random_col)
-        {
-            searchForTarget();
-            return;
-        }
-        move(grid[random_row][random_col]);
+        int last_row = currentTile->getRow();
+        int last_col = currentTile->getColumn();
+        currentTile = lastTile;   
+        lastTile = grid[last_row][last_col];
     }
-    else
+    else 
     {
-        if (currentTile != targetTile)
+        while(true)
         {
-            move(targetTile);
+            int direction = dist(gen);
+            if (direction == 1 && !currentTile->hasWall(Wall::NORTH) && currentTile->getRow() > 0 && !grid[currentTile->getRow() - 1][currentTile->getColumn()]->hasEvent(Event::FIRE))
+            {
+                move(grid[currentTile->getRow() - 1][currentTile->getColumn()]);
+                break;
+            }
+            else if (direction == 2 && !currentTile->hasWall(Wall::EAST) && currentTile->getColumn() < 7 && !grid[currentTile->getRow()][currentTile->getColumn() + 1]->hasEvent(Event::FIRE))
+            {
+                move(grid[currentTile->getRow()][currentTile->getColumn() + 1]);
+                break;
+            }
+            else if (direction == 3 && !currentTile->hasWall(Wall::SOUTH) && currentTile->getRow() < 5 && !grid[currentTile->getRow() + 1][currentTile->getColumn()]->hasEvent(Event::FIRE))
+            {
+                move(grid[currentTile->getRow() + 1][currentTile->getColumn()]);
+                break;
+            }
+            else if (direction == 4 && !currentTile->hasWall(Wall::WEST) && currentTile->getColumn() > 0 && !grid[currentTile->getRow()][currentTile->getColumn() - 1]->hasEvent(Event::FIRE))
+            {
+                move(grid[currentTile->getRow()][currentTile->getColumn() - 1]);
+                break;
+            }
         }
     }
+    CheckSurroundingsForEvent();
 }
 
 void Firefighter::moveToTarget()
 {
-    move(targetTile);
-    if (currentTile->getRow() == targetTile->getRow() && currentTile->getColumn() == targetTile->getColumn())
+    if (currentTile != targetTile)
     {
-        state = State::SEARCHING;
+        move(targetTile);
+    } 
+    else    
+    { 
+        for(const auto& [key, value] : team)
+        {
+            messagesToNode.push("Arrived");
+        }
+        if (!teamArrived())
+        {
+            state = State::WAITING;
+        }
+        else 
+        {
+            state = State::RESCUING_PERSON;
+        }     
     }
 }
 
@@ -185,7 +243,10 @@ void Firefighter::extinguishFire()
 
     targetTile->removeEvent(Event::FIRE);
     targetTile->addEvent(Event::SMOKE);
-    state = State::PUTTING_OUT_SMOKE;
+    if (!CheckSurroundingsForEvent())
+    {
+        state = State::SEARCHING;
+    }
     String msg = "Fire putout " + String(targetTile->getRow()) + " " + String(targetTile->getColumn());
     messagesToBridge.push(msg);
 }
@@ -204,32 +265,38 @@ void Firefighter::extinguishSmoke()
 
 void Firefighter::moveHazmat()
 {
-    if (currentTile->hasEvent(Event::HAZMAT) && currentTile->getRow() == exitTile->getRow() && currentTile->getColumn() == exitTile->getColumn())
+    if (targetTile != currentTile) 
+    {
+        move(targetTile);
+    }
+    else if (currentTile->hasEvent(Event::HAZMAT) && currentTile == exitTile)
     {
         currentTile->removeEvent(Event::HAZMAT);
         messagesToBridge.push("Hazmat saved " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()));
-        state = State::SEARCHING;
+        if (!CheckSurroundingsForEvent())
+        {
+            state = State::SEARCHING;
+        }
     }
     else if (currentTile->hasEvent(Event::HAZMAT))
     {
-        String msg = "Hazmat from " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()) + " to ";
         currentTile->removeEvent(Event::HAZMAT);
         move(exitTile);
         currentTile->addEvent(Event::HAZMAT);
-        msg += String(currentTile->getRow()) + " " + String(currentTile->getColumn());
+        String msg = "Hazmat from " + String(lastTile->getRow()) + " " + String(lastTile->getColumn()) + " to " + String(currentTile->getRow()) + " " + String(currentTile->getColumn());
         messagesToBridge.push(msg);
     }
 }
 
 void Firefighter::rescuePerson()
 {
-    if (currentTile->firefighters >= 4 && currentTile->hasEvent(Event::VICTIM) && currentTile->getRow() == exitTile->getRow() && currentTile->getColumn() == exitTile->getColumn())
+    if (currentTile->hasEvent(Event::VICTIM) && currentTile->getRow() == exitTile->getRow() && currentTile->getColumn() == exitTile->getColumn())
     {
         currentTile->removeEvent(Event::VICTIM);
         messagesToBridge.push("Victim saved " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()));
         state = State::SEARCHING;
     }
-    else if (currentTile->firefighters >= 4 && currentTile->hasEvent(Event::VICTIM))
+    else if (currentTile->hasEvent(Event::VICTIM))
     {
         String msg = "Victim from " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()) + " to ";
         currentTile->removeEvent(Event::VICTIM);
@@ -240,6 +307,40 @@ void Firefighter::rescuePerson()
     }
 }
 
+void Firefighter::wait()
+{
+    if (currentTile != targetTile)
+    {
+        move(targetTile);
+    }
+
+    if (teamArrived())
+    {
+        state = State::RESCUING_PERSON;
+    }
+}
+
+bool Firefighter::teamArrived()
+{
+    bool teamArrived = true; 
+
+    for(const auto& [key, value] : team)
+    {
+        if (value == false)
+        {
+            teamArrived = false;
+            break;
+        }
+    }
+    return teamArrived;
+}
+
+void Firefighter::startMission(int row, int column)
+{
+    targetTile = grid[row][column];
+    hasMission = true;
+}
+
 void Firefighter::Die()
 {
     state = State::DEAD;
@@ -247,19 +348,14 @@ void Firefighter::Die()
         
 void Firefighter::Tick() 
 {
-    if (firstTick)
-    { 
-        messagesToBridge.push("Firefighter from 0 0 to 0 0");
-        firstTick = false;
-    }
-
-    switch (state) {
+    switch (state) 
+    {
         case State::SEARCHING:
             Serial.println("SEARCHING");
             searchForTarget();
             break;
-        case State::MOVING:
-            Serial.println("MOVING");
+        case State::MOVING_TO_TARGET:
+            Serial.println("MOVINGTOTARGET");
             moveToTarget();
             break;
         case State::PUTTING_OUT_FIRE:
@@ -281,7 +377,11 @@ void Firefighter::Tick()
         case State::DEAD:
             Serial.println("DEAD");
             Die();
-            break;                  
+            break; 
+        case State::WAITING:
+            Serial.println("WAITING");
+            wait();
+            break;                 
     }
 }
 

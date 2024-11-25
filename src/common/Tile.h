@@ -29,9 +29,7 @@ class Tile
         int walls; 
 
     public:
-
-        int firefighters;
-        
+       
         Tile(int row, int column);
         void addWall(Wall wall);
         bool hasWall(Wall wall) const;

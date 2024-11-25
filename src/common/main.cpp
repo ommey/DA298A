@@ -131,8 +131,24 @@ void setup()
         }
       }
     }
-    else if (from == "fireFighter") {
-      //Mellan noderna kan jag inte er formattering
+    else if (from == "fireFighter") {  // TODO: Tror denna borde vara else, eftersom den skickas från brandmannens id, ex: "4687513249"
+      // Mellan noderna kan jag inte er formattering
+      // TODO: Nodernas meddelanden, formatering = samma som brygga ~
+      // Här under onReceive hanterar vi de olika sorternas meddelande som mottages från andra brandmän
+      // en exempelfunktion som tar emot positonerna och lägger dem i listan = contactList
+      if (msg.startsWith("Pos:")) {  // TODO: kontrollera att tokenize är använt rätt!
+        std::vector<std::string> tokens = tokenize(msg.c_str());
+        if (tokens.size() == 2) {
+          std::vector<std::string> posTokens = tokenize(tokens[1]);
+          if (posTokens.size() == 2 && tryParseInt(posTokens[0]) && tryParseInt(posTokens[1])) {
+            contactList[from] = std::make_pair(std::stoi(posTokens[0]), std::stoi(posTokens[1]));
+          }
+        }
+      }
+      if (msg.startsWith("ReqPos")) {
+        // TODO: Skicka tillbaka positionen till noden som frågade
+        mesh.sendSingle(from, "Pos:" + String(firefighter.currentTile->getRow()) + "," + String(firefighter.currentTile->getColumn()));
+      }
     }
   });
 

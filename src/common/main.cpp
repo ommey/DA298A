@@ -10,6 +10,7 @@
 #include <cmath>
 #include <unordered_map>
 #include <string>
+#include "hardware_config.h"
 
 using namespace std;
 
@@ -22,6 +23,23 @@ String bridgeNAme = "bridge"; // namnet på brygga-noden
 String nodeName; // namnet på noden
 namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
 std::map<String, std::pair<int, int>> contactList;  // Map of node IDs to their positions
+
+volatile bool button1Pressed = false;
+volatile bool button2Pressed = false;
+volatile bool button3Pressed = false;
+
+void IRAM_ATTR handleButton1() {
+    printToDisplay("Button 1 pressed");  // Test för att se att knapptryckning fungerar
+    button1Pressed = !button1Pressed;
+}
+void IRAM_ATTR handleButton2() {
+    printToDisplay("Button 2 pressed");  // Test för att se att knapptryckning fungerar
+    button2Pressed = !button2Pressed;
+}
+void IRAM_ATTR handleButton3() {
+    printToDisplay("Button 3 pressed");  // Test för att se att knapptryckning fungerar
+    button3Pressed = !button3Pressed;
+}
 
 void informBridge(void *pvParameters);  //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
 void meshUpdate(void *pvParameters);  //skit i denna, till för pinlessmesh,  freertos task funktion som uppdaterar meshen
@@ -69,6 +87,15 @@ void setup()
 {
   Serial.begin(115200);
   Serial.setTimeout(50);
+
+  // Init hardware, buttons and TFT display
+  hardwareInit();
+
+  // Attach interrupts to the button pins
+  attachInterrupt(digitalPinToInterrupt(BUTTON_1), handleButton1, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_2), handleButton2, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_3), handleButton3, FALLING);
+
 
   //mesh.setDebugMsgTypes(ERROR | CONNECTION);
   mesh.init(MESH_SSID, MESH_PASSWORD, MESH_PORT);  // Starta meshen

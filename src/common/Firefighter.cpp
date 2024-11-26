@@ -37,6 +37,7 @@ int Firefighter::getId() const
 
 void Firefighter::move(const Tile* destination)
 {  
+    Serial.printf("I move\n");
     lastTile = currentTile;
 
     int new_row = currentTile->getRow();  
@@ -166,16 +167,17 @@ bool Firefighter::atDeadEnd()
     {
         walls++;
     }
-    if(walls == 3)
+    if (walls == 3)
     {
         return true;
-    }
+    } 
+    return false;
 }
 
 
 void Firefighter::searchForTarget()
 {
-    Serial.println("Target tile i search:" + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
+    Serial.println("Target tile i search: " + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
 
     if (atDeadEnd())
     {
@@ -349,6 +351,7 @@ void Firefighter::Die()
         
 void Firefighter::Tick() 
 {
+    Serial.printf("Coordinates: %d, %d\n", currentTile->getRow(), currentTile->getColumn());
     if (state == State::SEARCHING)
     {
         if (atDeadEnd())

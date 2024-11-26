@@ -84,7 +84,7 @@ void setup()
       std::vector<std::string> tokens = tokenize(msg.c_str());
       if (tokens[0] == "Tick")
       {
-        firefighter.printGrid();
+        // firefighter.printGrid();
         firefighter.Tick();
       }
       else if (tokens.size() == 3) 

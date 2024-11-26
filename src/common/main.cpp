@@ -31,6 +31,7 @@ volatile bool button3Pressed = false;
 void IRAM_ATTR handleButton1() {
     printToDisplay("Button 1 pressed");  // Test för att se att knapptryckning fungerar
     button1Pressed = !button1Pressed;
+
 }
 void IRAM_ATTR handleButton2() {
     printToDisplay("Button 2 pressed");  // Test för att se att knapptryckning fungerar
@@ -88,7 +89,7 @@ void setup()
   Serial.begin(115200);
   Serial.setTimeout(50);
 
-  // Init hardware, buttons and TFT display
+  // Init hardware, buttons and TFT display and LED
   hardwareInit();
 
   // Attach interrupts to the button pins
@@ -103,21 +104,18 @@ void setup()
   nodeName = String(mesh.getNodeId());  //namnet kan modifieras mes.getNodeId() är alltid unikt
   mesh.setName(nodeName);
 
-  mesh.onReceive([](String &from, String &msg)
-   {
+  mesh.onReceive([](String &from, String &msg) {
     Serial.println(msg.c_str());
     
     if (from == bridgeNAme) {
       std::vector<std::string> tokens = tokenize(msg.c_str());
-      if (tokens[0] == "Tick")
-      {
+      if (tokens[0] == "Tick") {
         // firefighter.printGrid();
         firefighter.Tick();
+        printToDisplay("Tick\n");
       }
-      else if (tokens.size() == 3) 
-      {
-        if (tryParseInt(tokens[1]) && tryParseInt(tokens[2])) 
-        {
+      else if (tokens.size() == 3) {
+        if (tryParseInt(tokens[1]) && tryParseInt(tokens[2])) {
           size_t row = 0;
           size_t column = 0;
           row = std::stoi(tokens[1]);
@@ -172,13 +170,16 @@ void setup()
         mesh.sendSingle(from, "Pos " + String(firefighter.currentTile->getRow()) + " " + String(firefighter.currentTile->getColumn()));
       }
       if (tokens[0] == "Help") {
-        // TODO: 
+        // TODO: kolla om knapp ja eller nej är tryckt
+        setLEDColor(0, 255, 0);  // Grön
+        printToDisplay("Help request recieved");
       }
     }
   });
 
   mesh.onChangedConnections([]() {
     //Serial.printf("Connection table changed\n");
+    printToDisplay("Connection table changed");
   });
 
   //skapa tasks

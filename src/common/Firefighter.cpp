@@ -13,17 +13,15 @@ Firefighter::Firefighter() : gen(rd()), dist(1, 4)
     }
 
     this->id = 0;
-    this->currentTile = grid[0][0];  // Pekar på första tile
-    this->lastTile = grid[0][0];
+    this->currentTile = grid[5][7];  // Pekar på första tile
+    this->lastTile = grid[4][7];
     this->targetTile = grid[0][0];
     this->exitTile = grid[0][0]; 
     this->state = State::SEARCHING;
     this->hasMission = false;
-    
 
     addWalls();
 }
-
 
 void Firefighter::setId(int id)
 {
@@ -37,7 +35,6 @@ int Firefighter::getId() const
 
 void Firefighter::move(const Tile* destination)
 {  
-    Serial.printf("I move\n");
     lastTile = currentTile;
 
     int new_row = currentTile->getRow();  
@@ -59,11 +56,11 @@ void Firefighter::move(const Tile* destination)
     else if (currentTile->getColumn() == new_column && destination->getRow() > currentTile->getRow()) 
     {
         new_row = currentTile->getRow() + 1;
-    }
+    } 
     
     if (new_row < 0 || new_row >= 6 || new_column < 0 || new_column >= 8)
     {
-        Serial.println("Fel: ny position utanför gränserna.");
+        //Serial.println("Fel: ny position utanför gränserna.\n");
         return;
     }
 
@@ -73,78 +70,71 @@ void Firefighter::move(const Tile* destination)
 }
 
 
-bool Firefighter::ChangeState(Tile* tile)
-{
-    bool hasEvent = true;
+bool Firefighter::checkForEvent(Tile* tile, Event event)
+{ 
+    bool hasEvent = false;
 
-    if (hasMission)
+    if (tile->hasEvent(event))
     {
-        state = State::MOVING_TO_TARGET;
-    }
-    else if (tile->hasEvent(Event::VICTIM))
-    {
-        state = State::WAITING;
         targetTile = tile;
-    }
-    else if (tile->hasEvent(Event::FIRE))
+        hasEvent = true;
+    }    
+    else if (!tile->hasWall(Wall::NORTH) && grid[tile->getRow() - 1][tile->getColumn()]->hasEvent(event))
     {
-        state = State::PUTTING_OUT_FIRE;
-        targetTile = tile;
+        targetTile = grid[tile->getRow() - 1][tile->getColumn()];
+        hasEvent = true; 
     }
-    else if (tile->hasEvent(Event::SMOKE))
+    else if (!tile->hasWall(Wall::EAST) && grid[tile->getRow()][tile->getColumn() + 1]->hasEvent(event))
     {
-        state = State::PUTTING_OUT_SMOKE;
-        targetTile = tile;
+        targetTile = grid[tile->getRow()][tile->getColumn() + 1];
+        hasEvent = true;
     }
-    else if (tile->hasEvent(Event::HAZMAT))
+    else if(!tile->hasWall(Wall::SOUTH) && grid[tile->getRow() + 1][tile->getColumn()]->hasEvent(event))
     {
-        state = State::MOVING_HAZMAT;
-        targetTile = tile;
+        targetTile = grid[tile->getRow() + 1][tile->getColumn()];
+        hasEvent = true;
     }
-    else { hasEvent = false; }
-    return hasEvent; 
-}  
+    else if (!tile->hasWall(Wall::WEST) && grid[tile->getRow()][tile->getColumn() - 1]->hasEvent(event))
+    {
+        targetTile = grid[tile->getRow()][tile->getColumn() - 1];
+        hasEvent = true;
+    }
 
-bool Firefighter::CheckSurroundingsForEvent()
+  return hasEvent;
+}
+
+void Firefighter::changeState()
 {
-    if (ChangeState(currentTile))
+    if (hasMission) 
     {
-        Serial.println("Hittade target på samma tile");
-        return true; 
+      //Serial.printf("Goes to target\n");
+      state = State::MOVING_TO_TARGET;
     }
-    else if (!currentTile->hasWall(Wall::NORTH) && currentTile->getRow() > 0)
+    else if (checkForEvent(currentTile, Event::VICTIM))
     {
-        if(ChangeState(grid[currentTile->getRow() - 1][currentTile->getColumn()]))
-        {
-            Serial.println("Hittade target på norr");
-            return true;
-        }
+      //Serial.printf("Goes to picking up person\n");
+      state = State::WAITING; 
     }
-    else if (!currentTile->hasWall(Wall::EAST) && currentTile->getColumn() < 7)
+    else if (checkForEvent(currentTile, Event::FIRE)) 
     {
-        if(ChangeState(grid[currentTile->getRow()][currentTile->getColumn() + 1]))
-        {
-            Serial.println("Hittade target på öst");
-            return true;
-        }
+      //Serial.printf("Goes to putting out fire\n");
+      state = State::PUTTING_OUT_FIRE;
+    } 
+    else if (checkForEvent(currentTile, Event::SMOKE))
+    {
+      //Serial.printf("Goes to putting out smoke\n");
+      state = State::PUTTING_OUT_SMOKE;
+    } 
+    else if (checkForEvent(currentTile, Event::HAZMAT))
+    {
+      //Serial.printf("Goes to picking up material\n");
+      state = State::MOVING_HAZMAT;
+    } 
+    else 
+    {
+      //Serial.printf("Goes to searching\n");
+      state = State::SEARCHING;
     }
-    else if (!currentTile->hasWall(Wall::SOUTH) && currentTile->getRow() < 5)
-    {
-        if(ChangeState(grid[currentTile->getRow() + 1][currentTile->getColumn()]))
-        {
-            Serial.println("Hittade target på söder");
-            return true;
-        }
-    }
-    else if (!currentTile->hasWall(Wall::WEST))
-    {
-        if(ChangeState(grid[currentTile->getRow()][currentTile->getColumn() - 1]) && currentTile->getColumn() > 0)
-        {
-            Serial.println("Hittade target på väst");
-            return true;
-        }
-    }     
-    return false;   
 }
 
 bool Firefighter::atDeadEnd()
@@ -177,10 +167,12 @@ bool Firefighter::atDeadEnd()
 
 void Firefighter::searchForTarget()
 {
-    Serial.println("Target tile i search: " + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
+    //Serial.println("Target tile i search: " + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
 
     if (atDeadEnd())
-    {
+    {   
+        String msg = "Firefighter from " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()) + " to " + lastTile->getRow() + " " + lastTile->getColumn();
+        messagesToBridge.push(msg);
         int last_row = currentTile->getRow();
         int last_col = currentTile->getColumn();
         currentTile = lastTile;   
@@ -191,29 +183,37 @@ void Firefighter::searchForTarget()
         while(true)
         {
             int direction = dist(gen);
-            if (direction == 1 && !currentTile->hasWall(Wall::NORTH) && currentTile->getRow() > 0 && !grid[currentTile->getRow() - 1][currentTile->getColumn()]->hasEvent(Event::FIRE))
+            if (direction == 1 && !currentTile->hasWall(Wall::NORTH) && currentTile->getRow() > 0 
+            && !grid[currentTile->getRow() - 1][currentTile->getColumn()]->hasEvent(Event::FIRE) 
+            && grid[currentTile->getRow() - 1][currentTile->getColumn()] != lastTile)
             {
                 move(grid[currentTile->getRow() - 1][currentTile->getColumn()]);
                 break;
             }
-            else if (direction == 2 && !currentTile->hasWall(Wall::EAST) && currentTile->getColumn() < 7 && !grid[currentTile->getRow()][currentTile->getColumn() + 1]->hasEvent(Event::FIRE))
+            else if (direction == 2 && !currentTile->hasWall(Wall::EAST) && currentTile->getColumn() < 7
+            && !grid[currentTile->getRow()][currentTile->getColumn() + 1]->hasEvent(Event::FIRE)
+            && grid[currentTile->getRow()][currentTile->getColumn() + 1] != lastTile)
             {
                 move(grid[currentTile->getRow()][currentTile->getColumn() + 1]);
                 break;
             }
-            else if (direction == 3 && !currentTile->hasWall(Wall::SOUTH) && currentTile->getRow() < 5 && !grid[currentTile->getRow() + 1][currentTile->getColumn()]->hasEvent(Event::FIRE))
+            else if (direction == 3 && !currentTile->hasWall(Wall::SOUTH) 
+            && currentTile->getRow() < 5 && !grid[currentTile->getRow() + 1][currentTile->getColumn()]->hasEvent(Event::FIRE)
+            && grid[currentTile->getRow() + 1][currentTile->getColumn()] != lastTile)
             {
                 move(grid[currentTile->getRow() + 1][currentTile->getColumn()]);
                 break;
             }
-            else if (direction == 4 && !currentTile->hasWall(Wall::WEST) && currentTile->getColumn() > 0 && !grid[currentTile->getRow()][currentTile->getColumn() - 1]->hasEvent(Event::FIRE))
+            else if (direction == 4 && !currentTile->hasWall(Wall::WEST) && currentTile->getColumn() > 0 
+            && !grid[currentTile->getRow()][currentTile->getColumn() - 1]->hasEvent(Event::FIRE)
+            && grid[currentTile->getRow()][currentTile->getColumn() - 1] != lastTile)
             {
                 move(grid[currentTile->getRow()][currentTile->getColumn() - 1]);
                 break;
             }
         }
     }
-    CheckSurroundingsForEvent();
+    changeState();
 }
 
 void Firefighter::moveToTarget()
@@ -241,44 +241,31 @@ void Firefighter::moveToTarget()
 
 void Firefighter::extinguishFire()
 {
-    Serial.println("Target tile i extinguish fire:" + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
+    //Serial.println("Target tile i extinguish fire:" + String(targetTile->getRow()) + " " + String(targetTile->getColumn()) + "\n");
 
     targetTile->removeEvent(Event::FIRE);
     targetTile->addEvent(Event::SMOKE);
-    if (!CheckSurroundingsForEvent())
-    {
-        state = State::SEARCHING;
-    }
+    changeState();
     String msg = "Fire putout " + String(targetTile->getRow()) + " " + String(targetTile->getColumn());
     messagesToBridge.push(msg);
 }
 
 void Firefighter::extinguishSmoke()
 {
-    Serial.println("Target tile i extinguish smoke:" + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
+    //Serial.println("Target tile i extinguish smoke:" + String(targetTile->getRow()) + " " + String(targetTile->getColumn()) + "\n");
     targetTile->removeEvent(Event::SMOKE);
-    if (!CheckSurroundingsForEvent())
-    {
-        state = State::SEARCHING;
-    }
+    changeState();
     String msg = "Smoke putout " + String(targetTile->getRow()) + " " + String(targetTile->getColumn());
     messagesToBridge.push(msg);
 }
 
 void Firefighter::moveHazmat()
 {
-    if (targetTile != currentTile) 
-    {
-        move(targetTile);
-    }
-    else if (currentTile->hasEvent(Event::HAZMAT) && currentTile == exitTile)
+    if (currentTile->hasEvent(Event::HAZMAT) && currentTile == exitTile)
     {
         currentTile->removeEvent(Event::HAZMAT);
         messagesToBridge.push("Hazmat saved " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()));
-        if (!CheckSurroundingsForEvent())
-        {
-            state = State::SEARCHING;
-        }
+        changeState();
     }
     else if (currentTile->hasEvent(Event::HAZMAT))
     {
@@ -287,6 +274,10 @@ void Firefighter::moveHazmat()
         currentTile->addEvent(Event::HAZMAT);
         String msg = "Hazmat from " + String(lastTile->getRow()) + " " + String(lastTile->getColumn()) + " to " + String(currentTile->getRow()) + " " + String(currentTile->getColumn());
         messagesToBridge.push(msg);
+    } 
+    else
+    {
+        move(targetTile);
     }
 }
 
@@ -297,7 +288,7 @@ void Firefighter::rescuePerson()
         currentTile->removeEvent(Event::VICTIM);
         messagesToBridge.push("Victim saved " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()));
         hasMission = false;
-        state = State::SEARCHING;
+        changeState();
     }
     else if (currentTile->hasEvent(Event::VICTIM))
     {
@@ -351,7 +342,7 @@ void Firefighter::Die()
         
 void Firefighter::Tick() 
 {
-    Serial.printf("Coordinates: %d, %d\n", currentTile->getRow(), currentTile->getColumn());
+    //Serial.printf("Coordinates: %d, %d\n", currentTile->getRow(), currentTile->getColumn());
     if (state == State::SEARCHING)
     {
         if (atDeadEnd())
@@ -366,35 +357,35 @@ void Firefighter::Tick()
     switch (state) 
     {
         case State::SEARCHING:
-            Serial.println("SEARCHING");
+            //Serial.println("SEARCHING\n");
             searchForTarget();
             break;
         case State::MOVING_TO_TARGET:
-            Serial.println("MOVINGTOTARGET");
+            //Serial.println("MOVING_TO_TARGET\n");
             moveToTarget();
             break;
         case State::PUTTING_OUT_FIRE:
-            Serial.println("PUTTING_OUT_FIRE");
+            //Serial.println("PUTTING_OUT_FIRE\n");
             extinguishFire();
             break;
         case State::PUTTING_OUT_SMOKE:
-            Serial.println("PUTTING_OUT_SMOKE");
+            //Serial.println("PUTTING_OUT_SMOKE\n");
             extinguishSmoke();
             break;
         case State::MOVING_HAZMAT:
-            Serial.println("MOVING_HAZMAT");
+            //Serial.println("MOVING_HAZMAT\n");
             moveHazmat();
             break;
         case State::RESCUING_PERSON:
-            Serial.println("RESCUING_PERSON");
+            //Serial.println("RESCUING_PERSON\n");
             rescuePerson();
             break;  
         case State::DEAD:
-            Serial.println("DEAD");
+            //Serial.println("DEAD\n");
             Die();
             break; 
         case State::WAITING:
-            Serial.println("WAITING");
+            //Serial.println("WAITING\n");
             wait();
             break;                 
     }

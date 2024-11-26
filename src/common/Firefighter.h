@@ -59,11 +59,12 @@ class Firefighter
         bool ChangeState(Tile* tile);
         void Die();
         void addWalls();
-        bool CheckSurroundingsForEvent();
         void wait(); 
         void startMission(int row, int column);
         bool teamArrived();
         bool atDeadEnd(); 
+        bool checkForEvent(Tile* tile, Event event); 
+        void changeState();
 
         // Helper function to allocate memory for grid
         void initializeGrid();

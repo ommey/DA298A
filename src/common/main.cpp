@@ -131,66 +131,79 @@ void setup()
         }
       }
     }
-    else if (from == "fireFighter") {  // TODO: Tror denna borde vara else, eftersom den skickas från brandmannens id, ex: "4687513249"
+    else if (from == "fireFighter") {  // TODO: Tror denna borde vara else, eftersom den skickas från brandmannens id, ex: "4687513249" om inte namnet är till just fireFighter hos alla
+      std::vector<std::string> tokens = tokenize(msg.c_str());
       // Mellan noderna kan jag inte er formattering
-      // TODO: Nodernas meddelanden, formatering = samma som brygga ~
+      // TODO: Nodernas meddelanden, formatering = samma som brygga ~ish
       // Här under onReceive hanterar vi de olika sorternas meddelande som mottages från andra brandmän
       // en exempelfunktion som tar emot positonerna och lägger dem i listan = contactList
-      if (msg.startsWith("Pos:")) {  // TODO: kontrollera att tokenize är använt rätt!
-        std::vector<std::string> tokens = tokenize(msg.c_str());
-        if (tokens.size() == 2) {
-          std::vector<std::string> posTokens = tokenize(tokens[1]);
-          if (posTokens.size() == 2 && tryParseInt(posTokens[0]) && tryParseInt(posTokens[1])) {
-            contactList[from] = std::make_pair(std::stoi(posTokens[0]), std::stoi(posTokens[1]));
-          }
-        }
+      if (tokens[0] == "Pos") {  // TODO: kontrollera att tokenize är använt rätt!
+        contactList[from] = std::make_pair(std::stoi(tokens[1]), std::stoi(tokens[2]));
+        //Serial.println("Node %s is at position (%d, %d)\n", from.c_str(), std::stoi(tokens[1]), std::stoi(tokens[2]));  // Debug
       }
-      if (msg.startsWith("ReqPos")) {
-        // TODO: Skicka tillbaka positionen till noden som frågade
-        mesh.sendSingle(from, "Pos:" + String(firefighter.currentTile->getRow()) + "," + String(firefighter.currentTile->getColumn()));
+      if (tokens[0] == "ReqPos") {
+        mesh.sendSingle(from, "Pos " + String(firefighter.currentTile->getRow()) + " " + String(firefighter.currentTile->getColumn()));
+      }
+      if (tokens[0] == "Help") {
+        // TODO: 
       }
     }
   });
 
   mesh.onChangedConnections([]() {
-    Serial.printf("Connection table changed\n");
+    //Serial.printf("Connection table changed\n");
   });
 
-//skapa tasks
-xTaskCreate(meshUpdate, "meshUpdate", 10000, NULL, 1, NULL);
-xTaskCreate(informBridge, "informBridge", 10000, NULL, 1, NULL); 
+  //skapa tasks
+  xTaskCreate(meshUpdate, "meshUpdate", 10000, NULL, 1, NULL);
+  xTaskCreate(informBridge, "informBridge", 10000, NULL, 1, NULL); 
 
 }
 
 // This function is called when a new node connects
 void newConnectionCallback(uint32_t nodeId) 
 {
-    Serial.printf("New Connection, nodeId = %u\n", nodeId);
+    //Serial.printf("New Connection, nodeId = %u\n", nodeId);
 
     // Send this node's position to the new connection
     String posMsg = "Pos:" + String(firefighter.currentTile->getRow()) + "," + String(firefighter.currentTile->getColumn());
     mesh.sendSingle(nodeId, posMsg);
 }
 
-void informBridge(void *pvParameters) 
-{
-  while (1)
-  {
-     if (!firefighter.messagesToBridge.empty())
-     {
+void informBridge(void *pvParameters) {
+  while (1) {
+     if (!firefighter.messagesToBridge.empty()) {
       String msg = firefighter.messagesToBridge.front();
       Serial.println(msg);
 
-      if (!mesh.sendSingle(bridgeNAme, msg)) 
-      {
-        Serial.println("Message send failed!");
+      if (!mesh.sendSingle(bridgeNAme, msg)) {
+        //Serial.println("Message send failed!");
       }
       firefighter.messagesToBridge.pop();
     }    
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
   }
 }
-
+/*
+// Task that sends a message to the bridge every second
+QueueHandle_t xQueue;  // Flytta upp till globala variabler
+// Create a queue capable of containing 10 strings
+xQueue = xQueueCreate(10, sizeof(String));
+if (xQueue == NULL) {
+  Serial.println("Failed to create queue");
+}  // Flytta upp till setup
+xTaskCreate(sendMessagesTask, "sendMessagesTask", 10000, NULL, 1, NULL);  // Flytta upp till setup
+void sendMessagesTask(void *pvParameters) {
+  while (1) {
+    if (xQueueReceive(xQueue, &msg, portMAX_DELAY) == pdPASS) {
+      if (!mesh.sendSingle(bridgeNAme, msg)) {
+        Serial.println("Message send failed!");
+      }
+    }
+    vTaskDelay(1000 / portTICK_PERIOD_MS);  // TODO: Kan vara onödgt att ha delay på tasks ! Undersöker
+  }
+}
+*/
 // This function is called when a node disconnects
 void lostConnectionCallback(uint32_t nodeId) 
 {

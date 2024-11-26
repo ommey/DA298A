@@ -290,10 +290,11 @@ void Firefighter::moveHazmat()
 
 void Firefighter::rescuePerson()
 {
-    if (currentTile->hasEvent(Event::VICTIM) && currentTile->getRow() == exitTile->getRow() && currentTile->getColumn() == exitTile->getColumn())
+    if (currentTile->hasEvent(Event::VICTIM) && currentTile == exitTile)
     {
         currentTile->removeEvent(Event::VICTIM);
         messagesToBridge.push("Victim saved " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()));
+        hasMission = false;
         state = State::SEARCHING;
     }
     else if (currentTile->hasEvent(Event::VICTIM))
@@ -348,6 +349,17 @@ void Firefighter::Die()
         
 void Firefighter::Tick() 
 {
+    if (state == State::SEARCHING)
+    {
+        if (atDeadEnd())
+        {
+            if (lastTile->hasEvent(Event::FIRE))
+            {
+                state = State::PUTTING_OUT_FIRE;
+                targetTile = lastTile;
+            }
+        }
+    }
     switch (state) 
     {
         case State::SEARCHING:

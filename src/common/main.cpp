@@ -144,8 +144,8 @@ void setup()
         if (tryParseInt(tokens[2]) && tryParseInt(tokens[3])) {
           size_t row;
           size_t column;
-          std::stoi(tokens[1], &row);
-          std::stoi(tokens[2], &column);
+          std::stoi(tokens[2], &row);
+          std::stoi(tokens[3], &column);
           if (tokens[0] == "Firefighter" && firefighter.currentTile->getRow() == row && firefighter.currentTile->getColumn() == column) {
             firefighter.Die();
           } 

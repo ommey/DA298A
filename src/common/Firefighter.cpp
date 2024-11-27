@@ -19,7 +19,8 @@ Firefighter::Firefighter() : gen(rd()), dist(1, 4)
     this->exitTile = grid[0][0]; 
     this->state = State::SEARCHING;
     this->hasMission = false;
-
+    this->nbrFirefighters = 1;
+    
     addWalls();
 }
 
@@ -113,7 +114,7 @@ void Firefighter::changeState()
     else if (checkForEvent(currentTile, Event::VICTIM))
     {
       //Serial.printf("Goes to picking up person\n");
-      state = State::WAITING; 
+      state = State::MOVING_TO_TARGET; 
     }
     else if (checkForEvent(currentTile, Event::FIRE)) 
     {
@@ -224,11 +225,9 @@ void Firefighter::moveToTarget()
     } 
     else    
     { 
-        for(const auto& [key, value] : team)
-        {
-            messagesToNode.push("Arrived");
-        }
-        if (!teamArrived())
+        messagesToNode.push(leaderID + " Arrived");
+        
+        if (nbrFirefighters < 4)
         {
             state = State::WAITING;
         }
@@ -248,6 +247,7 @@ void Firefighter::extinguishFire()
     changeState();
     String msg = "Fire putout " + String(targetTile->getRow()) + " " + String(targetTile->getColumn());
     messagesToBridge.push(msg);
+    messagesToBroadcast.push(msg);
 }
 
 void Firefighter::extinguishSmoke()
@@ -257,6 +257,7 @@ void Firefighter::extinguishSmoke()
     changeState();
     String msg = "Smoke putout " + String(targetTile->getRow()) + " " + String(targetTile->getColumn());
     messagesToBridge.push(msg);
+    messagesToBroadcast.push(msg);
 }
 
 void Firefighter::moveHazmat()
@@ -278,6 +279,7 @@ void Firefighter::moveHazmat()
     else
     {
         move(targetTile);
+        messagesToBroadcast.push("Hazmat saved " + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
     }
 }
 
@@ -303,30 +305,19 @@ void Firefighter::rescuePerson()
 
 void Firefighter::wait()
 {
-    if (currentTile != targetTile)
-    {
-        move(targetTile);
-    }
-
-    if (teamArrived())
+    if (teamArrived) 
     {
         state = State::RESCUING_PERSON;
     }
-}
-
-bool Firefighter::teamArrived()
-{
-    bool teamArrived = true; 
-
-    for(const auto& [key, value] : team)
+    else if (nbrFirefighters == 4) 
     {
-        if (value == false)
+        for(String member : teamMembers)
         {
-            teamArrived = false;
-            break;
+            messagesToNode.push(member + " TeamArrived");
         }
+        nbrFirefighters = 1;
+        teamArrived = true;
     }
-    return teamArrived;
 }
 
 void Firefighter::startMission(int row, int column)

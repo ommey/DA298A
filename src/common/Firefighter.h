@@ -29,19 +29,26 @@ class Firefighter
         std::mt19937 gen;
         std::uniform_int_distribution<> dist;
         int id;
-        bool hasMission; 
         State state; 
         Tile* lastTile;     
         Tile* targetTile; 
         Tile* exitTile; 
+        String leaderID; 
+        bool teamArrived;
+        std::vector<String> teamMembers;
 
     public:
         // Grid of pointers to Tile objects
         Tile* grid[6][8]; // Dynamically allocated grid of pointers
         Tile* currentTile;
-        queue<String> messagesToBridge;
-        queue<String> messagesToNode;
-        std::map<String, bool> team;  
+        bool hasMission;
+        int nbrFirefighters;
+
+        queue<String> messagesToBridge; // meddelanden som ska skickas till bridge
+        queue<String> messagesToNode; // meddelanden som ska skickas till en specific nod
+        queue<String> messagesToBroadcast; // meddelanden som ska skickas till alla noder (inte till bridge)
+
+        std::map<String, float> positionsList;  // Map of node IDs to their positions
 
         Firefighter();
         ~Firefighter();  // Destructor for cleaning up dynamic memory
@@ -61,7 +68,6 @@ class Firefighter
         void addWalls();
         void wait(); 
         void startMission(int row, int column);
-        bool teamArrived();
         bool atDeadEnd(); 
         bool checkForEvent(Tile* tile, Event event); 
         void changeState();

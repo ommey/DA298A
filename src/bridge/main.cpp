@@ -10,30 +10,15 @@ namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till speci
 
 void updateFromGUI(void *pvParameters){
     while(1) {
-        if (Serial.available()>0){
+        if (Serial.available()>0){  
             String msg = Serial.readStringUntil('\n');
-            int index = msg.indexOf(':');
-            if (index > 0) { 
-                String receiver_node = msg.substring(0, index);
-                String message = msg.substring(index + 1);
-                if (receiver_node == "all") {
-                    if (mesh.sendBroadcast(message)) {
-                        Serial.println("Message sent to all");
+                    if (mesh.sendBroadcast(msg)) {
+                        //Serial.println("Message sent to all");
                     } else {
-                        Serial.println("Failed to send broadcast");
-                    }
-                } else {
-                    if (mesh.sendSingle(receiver_node, message)) {
-                        Serial.println("Message sent to " + receiver_node);
-                    } else {
-                        Serial.println("Failed to send to " + receiver_node);
-                    }
-                }
-            } else {
-                Serial.println("Invalid message format. Use 'nodeName:message'.");
-            }
+                        //Serial.println("Failed to send broadcast");
+                    }      
         } 
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 }
 
@@ -44,17 +29,9 @@ void meshUpdate(void *pvParameters){
     }
 }
 
-void printTable() {
-    auto nodes = mesh.getNodeList();
-    Serial.println("Connected nodes:");
-    for (auto node : nodes) {
-        Serial.println(node);
-    }
-}
-
 void setup() {
   Serial.begin(115200);
-  //Serial.setTimeout(50);  // Behövs inte???
+  Serial.setTimeout(50);  // Behövs inte???
 
   //mesh.setDebugMsgTypes(ERROR | CONNECTION); 
 

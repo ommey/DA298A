@@ -180,8 +180,8 @@ void setup()
       {  // TODO: kontrollera att tokenize är använt rätt!
         float dis = std::sqrt(std::pow(tryParseInt(tokens[1])-firefighter.currentTile->getRow(),2)+std::pow(tryParseInt(tokens[2])-firefighter.currentTile->getColumn(),2));
         firefighter.positionsList.insert({from, dis});  // Spara nodens position i positionsList
-        //Serial.println("Node %s is at Position (%d, %d)\n", from.c_str(), std::stoi(tokens[1]), std::stoi(tokens[2]));  // Debug
-        
+        Serial.println("Node %s is at Position (%d, %d)\n", from.c_str(), std::stoi(tokens[1]), std::stoi(tokens[2]));  // Debug
+      
       }
       else if (tokens[0] == "ReqPos") 
       {

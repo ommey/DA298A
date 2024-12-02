@@ -1,15 +1,6 @@
-#include <Arduino.h>
 #include "namedMesh.h"
-#include "Tile.h"
 #include "Firefighter.h"
-#include <array>
-#include <iostream>
-#include <random>
-#include <vector>
-#include <queue>
 #include <cmath>
-#include <unordered_map>
-#include <string>
 #include "hardware_config.h"
 
 using namespace std;

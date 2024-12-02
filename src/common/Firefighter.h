@@ -2,7 +2,6 @@
 #define FIREFIGHTER_H_
 
 #include "Tile.h"
-#include <array>
 #include <random>
 #include <queue>
 #include <arduino.h>

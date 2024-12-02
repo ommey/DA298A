@@ -34,21 +34,6 @@ int Firefighter::getId() const
     return id;
 }    
 
-void Firefighter::sortPositionList()
-{
-    std::sort(positionsList.begin(), positionsList.end(), [](const std::pair<std::string, int>& a, const std::pair<std::string, int>& b) {
-    return a.second < b.second; 
-    });
-}
-
-void Firefighter::sendHelpToThreeColleagues()
-{
-    for (int i = 0; i < 3; i++)
-    {
-        messagesToNode.push(positionsList[i].first + "Help");
-    }
-}
-
 void Firefighter::move(const Tile* destination)
 {  
     lastTile = currentTile;

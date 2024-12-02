@@ -48,8 +48,7 @@ class Firefighter
         queue<String> messagesToNode; // meddelanden som ska skickas till en specific nod
         queue<String> messagesToBroadcast; // meddelanden som ska skickas till alla noder (inte till bridge)
 
-        std::vector<std::pair<String, float>> positionsList;  // Map of node IDs to their positions
-    
+        std::map<String, float> positionsList;  // Map of node IDs to their positions
 
         Firefighter();
         ~Firefighter();  // Destructor for cleaning up dynamic memory
@@ -72,8 +71,6 @@ class Firefighter
         bool atDeadEnd(); 
         bool checkForEvent(Tile* tile, Event event); 
         void changeState();
-        void sortPositionList();
-        void sendHelpToThreeColleagues();
 
         // Helper function to allocate memory for grid
         void initializeGrid();

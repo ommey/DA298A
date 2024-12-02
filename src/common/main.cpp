@@ -12,6 +12,7 @@
 #include <string>
 #include "hardware_config.h"
 
+
 using namespace std;
 
 #define   MESH_SSID       "meshNetwork"
@@ -51,7 +52,7 @@ void IRAM_ATTR handleButton3() {
 void informBridge(void *pvParameters);  //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
 void informNodes(void *pvParameters);
 void meshUpdate(void *pvParameters);  //skit i denna, till för pinlessmesh,  freertos task funktion som uppdaterar meshen
-void informSingleNode(void *pvParameters);
+void informAll(void *pvParameters);
 
 std::vector<std::string> tokenize(const std::string& expression) {
     std::vector<std::string> tokens;
@@ -223,7 +224,7 @@ void setup()
   xTaskCreate(meshUpdate, "meshUpdate", 10000, NULL, 1, NULL);
   xTaskCreate(informBridge, "informBridge", 5000, NULL, 1, NULL); 
   xTaskCreate(informNodes, "informNodes", 5000, NULL, 1, NULL);
-  xTaskCreate(informSingleNode, "informAll", 5000, NULL, 1, NULL);
+  xTaskCreate(informAll, "informAll", 5000, NULL, 1, NULL);
 
 }
 
@@ -255,31 +256,31 @@ void informBridge(void *pvParameters) {
 
 void informNodes(void *pvParameters) {
   while (1) {
-     if (!firefighter.messagesToBroadcast.empty()) {
-      String msg = firefighter.messagesToBroadcast.front();
+     if (!firefighter.messagesToNode.empty()) {
+      String msg = firefighter.messagesToNode.front();
       //Serial.println(msg);
       for (auto node : mesh.getNodeList())
       {
-        if (node.getName() != String("bridge"))
+        if (node.getNodeId() != "bridge")
         {
-          mesh.sendSingle(node, msg);
-          mesh.
+          mesh.sendSingle(node.getNodeId(), msg);
         }   
       }
-      firefighter.messagesToBroadcast.pop();
+      firefighter.messagesToNode.pop();
     }    
     vTaskDelay(500 / portTICK_PERIOD_MS);
   }
 }
 
-void informSingleNode(void *pvParameters) {
+void informAll(void *pvParameters) {
   while (1) {
-     if (!firefighter.messagesToNode.empty()) {
-      String msg = firefighter.messagesToNode.front();
-      //Serial.println(msg);      
-      std::vector<std::string> tokens = tokenize(msg.c_str());
-      mesh.sendSingle(tokens[0], tokens[1]);
-      firefighter.messagesToNode.pop();
+     if (!firefighter.messagesToBroadcast.empty()) {
+      String msg = firefighter.messagesToBroadcast.front();
+      //Serial.println(msg);
+      
+      mesh.sendBroadcast(msg);
+
+      firefighter.messagesToBroadcast.pop();
     }    
     vTaskDelay(500 / portTICK_PERIOD_MS);
   }

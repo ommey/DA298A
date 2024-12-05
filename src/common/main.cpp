@@ -20,9 +20,9 @@ using namespace std;
 #define   MESH_PORT       5555
 
 Firefighter firefighter;
-String bridgeNAme = "bridge"; // namnet på brygga-noden
+uint32_t bridgeNAme = 1; // namnet på brygga-noden
 String nodeName; // namnet på noden
-namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
+painlessMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
 String leaderID;  // ID of the node who sent help request
 
 volatile bool button1Pressed = false;
@@ -110,10 +110,7 @@ void setup()
   //mesh.setDebugMsgTypes(ERROR | CONNECTION);
   mesh.init(MESH_SSID, MESH_PASSWORD, MESH_PORT);  // Starta meshen
 
-  nodeName = String(mesh.getNodeId());  //namnet kan modifieras mes.getNodeId() är alltid unikt
-  mesh.setName(nodeName);
-
-  mesh.onReceive([](String &from, String &msg) {
+  mesh.onReceive([](uint32_t from, String &msg) {
     Serial.println(msg.c_str());
     
     if (from == bridgeNAme) {
@@ -170,7 +167,7 @@ void setup()
         }
       }
     }
-    else if (from == "fireFighter") 
+    else if (from != bridgeNAme) 
     {  // TODO: Tror denna borde vara else, eftersom den skickas från brandmannens id, ex: "4687513249" om inte namnet är till just fireFighter hos alla
       std::vector<std::string> tokens = tokenize(msg.c_str());
       // Nodernas meddelanden, formatering = samma som brygga ~ish
@@ -179,9 +176,17 @@ void setup()
       if (tokens[0] == "Pos") 
       {  // TODO: kontrollera att tokenize är använt rätt!
         float dis = std::sqrt(std::pow(tryParseInt(tokens[1])-firefighter.currentTile->getRow(),2)+std::pow(tryParseInt(tokens[2])-firefighter.currentTile->getColumn(),2));
-        firefighter.positionsList.insert({from, dis});  // Spara nodens position i positionsList
-        Serial.println("Node %s is at Position (%d, %d)\n", from.c_str(), std::stoi(tokens[1]), std::stoi(tokens[2]));  // Debug
-      
+        firefighter.positionsList.push_back({from, dis}); // Spara nodens position i positionsList
+        if (firefighter.positionsList.size() == mesh.getNodeList(false).size()-1) { //Check if all nodes anwsered, if true, start sorting
+            std::sort(firefighter.positionsList.begin(), firefighter.positionsList.end(),
+              [](const std::pair<uint32_t, float>& a, const std::pair<uint32_t, float>& b) {
+                  return a.second < b.second; // Compare by distance
+              });
+              for (int i = 0; i < 3; i++) {
+                //Iterate and send to 3 closest nodes
+                mesh.sendSingle(firefighter.positionsList[0].first, "Help");
+              }
+        }
       }
       else if (tokens[0] == "ReqPos") 
       {
@@ -261,9 +266,9 @@ void informNodes(void *pvParameters) {
       //Serial.println(msg);
       for (auto node : mesh.getNodeList())
       {
-        if (node.getNodeId() != "bridge")
+        if (node != bridgeNAme)
         {
-          mesh.sendSingle(node.getNodeId(), msg);
+          mesh.sendSingle(node, msg);
         }   
       }
       firefighter.messagesToNode.pop();
@@ -291,15 +296,24 @@ void lostConnectionCallback(uint32_t nodeId)
 {
     Serial.printf("Lost Connection, nodeId = %u\n", nodeId);
 
-    // Remove the disconnected node from the Pussyition map
-    if (positionsList.erase(String(nodeId))) 
+    // Hitta noden i positionsList
+    auto it = std::find_if(firefighter.positionsList.begin(), firefighter.positionsList.end(),
+                           [nodeId](const std::pair<uint32_t, float>& entry) {
+                               return entry.first == nodeId; // Matcha nodeId
+                           });
+
+    // Om noden hittades, ta bort den
+    if (it != firefighter.positionsList.end()) 
     {
-        Serial.printf("Node %u removed from position map\n", nodeId);
-    } else 
+        firefighter.positionsList.erase(it);
+        Serial.printf("Node %u removed from position list\n", nodeId);
+    } 
+    else 
     {
-        Serial.printf("Node %u was not in the position map\n", nodeId);
+        Serial.printf("Node %u was not in the position list\n", nodeId);
     }
 }
+
 
 void meshUpdate(void *pvParameters) 
 {

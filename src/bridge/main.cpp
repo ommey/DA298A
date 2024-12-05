@@ -1,12 +1,12 @@
 #include <Arduino.h>
-#include "namedMesh.h"
+#include "painlessMesh.h"
 
 #define   MESH_SSID       "meshNetwork"
 #define   MESH_PASSWORD   "meshPassword"
 #define   MESH_PORT       5555
 
 String nodeName = "bridge"; // namnet på brygg-noden
-namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder
+painlessMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder
 
 void updateFromGUI(void *pvParameters){
     while(1) {
@@ -37,9 +37,7 @@ void setup() {
 
   mesh.init(MESH_SSID, MESH_PASSWORD, MESH_PORT); // Starta meshen
 
-  mesh.setName(nodeName);
-
-  mesh.onReceive([](String &from, String &msg) {
+  mesh.onReceive([](uint32_t from, String &msg) {
     Serial.println(msg.c_str());
   });
 

@@ -31,22 +31,22 @@ class Firefighter
         int id;
         State state; 
         Tile* lastTile;     
-        Tile* targetTile; 
         Tile* exitTile; 
-        String leaderID; 
         bool teamArrived;
-        std::vector<String> teamMembers;
 
     public:
         // Grid of pointers to Tile objects
         Tile* grid[6][8]; // Dynamically allocated grid of pointers
         Tile* currentTile;
+        Tile* targetTile; 
         bool hasMission;
         int nbrFirefighters;
+        uint32_t leaderID; 
+        std::vector<uint32_t> teamMembers;
 
         queue<String> messagesToBridge; // meddelanden som ska skickas till bridge
-        queue<String> messagesToNode; // meddelanden som ska skickas till en specific nod
         queue<String> messagesToBroadcast; // meddelanden som ska skickas till alla noder (inte till bridge)
+        queue<std::pair<uint32_t, String>> messagesToNode; // meddelanden som ska skickas till en specific nod
 
         std::vector<std::pair<uint32_t, float>> positionsList; // Map of node IDs to their positions
 
@@ -67,7 +67,8 @@ class Firefighter
         bool ChangeState(Tile* tile);
         void Die();
         void addWalls();
-        void wait(); 
+        void wait();
+        void TeamArrived();
         void startMission(int row, int column);
         bool atDeadEnd(); 
         bool checkForEvent(Tile* tile, Event event); 

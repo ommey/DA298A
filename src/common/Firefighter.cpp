@@ -223,11 +223,11 @@ void Firefighter::moveToTarget()
     {
         move(targetTile);
     } 
-    else    
-    { 
-        messagesToNode.push(leaderID + " Arrived");
-        
-        if (nbrFirefighters < 4)
+    if (currentTile == targetTile)    
+    {         
+        messagesToNode.push(std::make_pair(leaderID, "Arrived"));
+       
+        if (!teamArrived)
         {
             state = State::WAITING;
         }
@@ -237,6 +237,7 @@ void Firefighter::moveToTarget()
         }     
     }
 }
+
 
 void Firefighter::extinguishFire()
 {
@@ -311,13 +312,19 @@ void Firefighter::wait()
     }
     else if (nbrFirefighters == 4) 
     {
-        for(String member : teamMembers)
+        for(uint32_t member : teamMembers)
         {
-            messagesToNode.push(member + " TeamArrived");
+            // lopa igenom alla medlemmar i teamet och skicka meddelande till dem
+            messagesToNode.push(std::make_pair(member, "TeamArrived"));
         }
         nbrFirefighters = 1;
         teamArrived = true;
     }
+}
+
+void Firefighter::TeamArrived()
+{
+    teamArrived = true;
 }
 
 void Firefighter::startMission(int row, int column)

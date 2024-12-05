@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include "namedMesh.h"
 #include "Tile.h"
 #include "Firefighter.h"
 #include <array>
@@ -11,6 +10,7 @@
 #include <unordered_map>
 #include <string>
 #include "hardware_config.h"
+#include "painlessMesh.h"
 
 
 using namespace std;
@@ -20,14 +20,13 @@ using namespace std;
 #define   MESH_PORT       5555
 
 Firefighter firefighter;
-uint32_t bridgeNAme = 1; // namnet på brygga-noden
+uint32_t bridgeName = 1; // namnet på brygga-noden
 String nodeName; // namnet på noden
 painlessMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
-String leaderID;  // ID of the node who sent help request
-
-volatile bool button1Pressed = false;
-volatile bool button2Pressed = false;
-volatile bool button3Pressed = false;
+uint32_t leaderID;  // ID of the node who sent help request
+int missionTargetRow = 0;
+int missionTargetColumn = 0;
+int positionListCounter = 0;
 
 
 void IRAM_ATTR handleButton1() {  //TODO: ändra vad knappen gör
@@ -37,22 +36,24 @@ void IRAM_ATTR handleButton1() {  //TODO: ändra vad knappen gör
   firefighter.messagesToBroadcast.push("ReqPos");
   // TODO: Sätt waiting state?
 }
-void IRAM_ATTR handleButton2() {
+void IRAM_ATTR handleButton2() {// Yes-button
   printToDisplay("Button 2 pressed");  // Test för att se att knapptryckning fungerar
   // TODO: Handle button 2 press, when help is requested (maybe bool?), this button is yes.
-  // I think we just wAnt to toggle boolean here
+  // I think we just want to toggle boolean here
+  mesh.sendSingle(leaderID, "Yes");
+  firefighter.startMission(missionTargetRow, missionTargetColumn);
+  firefighter.leaderID = leaderID;
+  
 }
-void IRAM_ATTR handleButton3() {
+void IRAM_ATTR handleButton3() {// No-button
   printToDisplay("Button 3 pressed");  // Test för att se att knapptryckning fungerar
-  button3Pressed = !button3Pressed;
-  // TODO: Handle button 3 press, when help is requested (maybe bool?), this button is no.
-  // I think we just wAnt to toggle boolean here
+  mesh.sendSingle(leaderID, "No");
 }
 
 void informBridge(void *pvParameters);  //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
-void informNodes(void *pvParameters);
+void informSingleNode(void *pvParameters);
 void meshUpdate(void *pvParameters);  //skit i denna, till för pinlessmesh,  freertos task funktion som uppdaterar meshen
-void informAll(void *pvParameters);
+void informAllNodes(void *pvParameters);
 
 std::vector<std::string> tokenize(const std::string& expression) {
     std::vector<std::string> tokens;
@@ -80,7 +81,6 @@ bool tryParseInt(const std::string& str)
     {
         size_t pos;
         std::stoi(str, &pos);
-
         return pos == str.length();
     }
     catch (std::invalid_argument&) 
@@ -91,6 +91,36 @@ bool tryParseInt(const std::string& str)
     {
         return false; // Strängen representerar ett tal utanför int:s intervall
     }
+}
+
+void handlePositions(uint32_t from, std::vector<std::string> tokens)
+{
+  float dis = std::sqrt(std::pow(tryParseInt(tokens[1])-firefighter.targetTile->getRow(),2)+std::pow(tryParseInt(tokens[2])-firefighter.targetTile->getColumn(),2));
+  firefighter.positionsList.push_back({from, dis}); // Spara nodens position i positionsList
+  if (firefighter.positionsList.size() == mesh.getNodeList(false).size()-1) //Check if all nodes anwsered, if true, start sorting
+  { 
+    std::sort(firefighter.positionsList.begin(), firefighter.positionsList.end(),
+    [](const std::pair<uint32_t, float>& a, const std::pair<uint32_t, float>& b) {
+      return a.second < b.second; // Compare by distance
+    });
+    positionListCounter = 0;
+    for (positionListCounter; positionListCounter < 3; positionListCounter++) {
+      mesh.sendSingle(firefighter.positionsList[positionListCounter].first, "Help " + String(firefighter.targetTile->getRow()) + " " + String(firefighter.targetTile->getColumn()));
+    }
+  }
+}
+
+void handleHelpRequest(uint32_t from, std::vector<std::string> tokens)
+{
+  // TODO: spara id på avsändare.
+  if (!firefighter.hasMission) 
+  {
+    leaderID = from;  // Spara id på avsändare
+    setLEDColor(0, 0, 255);  // Blå testfärg
+    printToDisplay("Help request recieved");
+    missionTargetRow = std::stoi(tokens[1]);
+    missionTargetColumn = std::stoi(tokens[2]);
+  }
 }
 
 void setup() 
@@ -112,12 +142,12 @@ void setup()
 
   mesh.onReceive([](uint32_t from, String &msg) {
     Serial.println(msg.c_str());
-    
-    if (from == bridgeNAme) {
-      std::vector<std::string> tokens = tokenize(msg.c_str());
+
+    std::vector<std::string> tokens = tokenize(msg.c_str());
+
+    if (from == bridgeName) {
       if (tokens[0] == "Tick") 
       {
-        // firefighter.printGrid();
         firefighter.Tick();
         printToDisplay("Tick\n");
       }
@@ -167,26 +197,11 @@ void setup()
         }
       }
     }
-    else if (from != bridgeNAme) 
-    {  // TODO: Tror denna borde vara else, eftersom den skickas från brandmannens id, ex: "4687513249" om inte namnet är till just fireFighter hos alla
-      std::vector<std::string> tokens = tokenize(msg.c_str());
-      // Nodernas meddelanden, formatering = samma som brygga ~ish
-      // Här under onReceive hanterar vi de olika sorternas meddelande som mottages från andra brandmän
-      // en exempelfunktion som tar emot positonerna och lägger dem i listan = positionsList
+    else 
+    {
       if (tokens[0] == "Pos") 
-      {  // TODO: kontrollera att tokenize är använt rätt!
-        float dis = std::sqrt(std::pow(tryParseInt(tokens[1])-firefighter.currentTile->getRow(),2)+std::pow(tryParseInt(tokens[2])-firefighter.currentTile->getColumn(),2));
-        firefighter.positionsList.push_back({from, dis}); // Spara nodens position i positionsList
-        if (firefighter.positionsList.size() == mesh.getNodeList(false).size()-1) { //Check if all nodes anwsered, if true, start sorting
-            std::sort(firefighter.positionsList.begin(), firefighter.positionsList.end(),
-              [](const std::pair<uint32_t, float>& a, const std::pair<uint32_t, float>& b) {
-                  return a.second < b.second; // Compare by distance
-              });
-              for (int i = 0; i < 3; i++) {
-                //Iterate and send to 3 closest nodes
-                mesh.sendSingle(firefighter.positionsList[0].first, "Help");
-              }
-        }
+      {  
+        handlePositions(from, tokens);
       }
       else if (tokens[0] == "ReqPos") 
       {
@@ -194,28 +209,24 @@ void setup()
       }
       else if (tokens[0] == "Help") 
       {
-        // TODO: spara id på avsändare.
-        if (!firefighter.hasMission) 
-        {
-          leaderID = from;  // Spara id på avsändare
-          setLEDColor(0, 0, 255);  // Blå testfärg
-          printToDisplay("Help request recieved");
-        }
+        handleHelpRequest(from, tokens);
       }
       else if (tokens[0] == "Yes") 
-      {  
-        // TODO: vänta tills 3 sagt ja
-        // TODO: add to list of helpers
-
-        
-        
+      {        
+        firefighter.teamMembers.push_back(from);
       }
       else if (tokens[0] == "No") 
-      {  // TODO: om nej, skicka till nästa
+      {  
+        mesh.sendSingle(firefighter.positionsList[positionListCounter].first, "Help " + String(firefighter.targetTile->getRow()) + " " + String(firefighter.targetTile->getColumn()));
+        positionListCounter++;
       }
       else if (tokens[0] == "Arrived")
       {
         firefighter.nbrFirefighters++;
+      }
+      else if (tokens[0] == "TeamArrived")
+      {
+        firefighter.TeamArrived();
       }
     }
   });
@@ -228,8 +239,8 @@ void setup()
   //skapa tasks
   xTaskCreate(meshUpdate, "meshUpdate", 10000, NULL, 1, NULL);
   xTaskCreate(informBridge, "informBridge", 5000, NULL, 1, NULL); 
-  xTaskCreate(informNodes, "informNodes", 5000, NULL, 1, NULL);
-  xTaskCreate(informAll, "informAll", 5000, NULL, 1, NULL);
+  xTaskCreate(informSingleNode, "informFirefighters", 5000, NULL, 1, NULL);
+  xTaskCreate(informAllNodes, "informAll", 5000, NULL, 1, NULL);
 
 }
 
@@ -249,7 +260,7 @@ void informBridge(void *pvParameters) {
       String msg = firefighter.messagesToBridge.front();
       Serial.println(msg);
 
-      if (!mesh.sendSingle(bridgeNAme, msg)) {
+      if (!mesh.sendSingle(bridgeName, msg)) {
         //Serial.println("Message send failed!");
       }
       firefighter.messagesToBridge.pop();
@@ -258,37 +269,31 @@ void informBridge(void *pvParameters) {
   }
 }
 
-
-void informNodes(void *pvParameters) {
+void informSingleNode(void *pvParameters) {
   while (1) {
-     if (!firefighter.messagesToNode.empty()) {
-      String msg = firefighter.messagesToNode.front();
-      //Serial.println(msg);
-      for (auto node : mesh.getNodeList())
-      {
-        if (node != bridgeNAme)
-        {
-          mesh.sendSingle(node, msg);
-        }   
-      }
+     if (!firefighter.messagesToNode.empty()) {      
+      std::pair<uint32_t, String> msg = firefighter.messagesToNode.front();
+      mesh.sendSingle(msg.first, msg.second);
       firefighter.messagesToNode.pop();
     }    
     vTaskDelay(500 / portTICK_PERIOD_MS);
   }
 }
 
-void informAll(void *pvParameters) {
+void informAllNodes(void *pvParameters) {
   while (1) {
-     if (!firefighter.messagesToBroadcast.empty()) {
       String msg = firefighter.messagesToBroadcast.front();
-      //Serial.println(msg);
-      
-      mesh.sendBroadcast(msg);
 
+      for (auto node : mesh.getNodeList())
+      {
+        if (node != bridgeName)
+        {
+          mesh.sendSingle(node, msg);
+        }   
+      }
       firefighter.messagesToBroadcast.pop();
     }    
     vTaskDelay(500 / portTICK_PERIOD_MS);
-  }
 }
 
 // This function is called when a node disconnects

@@ -295,8 +295,8 @@ void informAllNodes(void *pvParameters) {
       }
       firefighter.messagesToBroadcast.pop();
     } 
+        vTaskDelay(500 / portTICK_PERIOD_MS);
   }   
-    vTaskDelay(500 / portTICK_PERIOD_MS);
 }
 
 // This function is called when a node disconnects

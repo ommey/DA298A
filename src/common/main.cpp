@@ -282,6 +282,8 @@ void informSingleNode(void *pvParameters) {
 
 void informAllNodes(void *pvParameters) {
   while (1) {
+    if (!firefighter.messagesToBroadcast.empty()) 
+    {
       String msg = firefighter.messagesToBroadcast.front();
 
       for (auto node : mesh.getNodeList())
@@ -292,7 +294,8 @@ void informAllNodes(void *pvParameters) {
         }   
       }
       firefighter.messagesToBroadcast.pop();
-    }    
+    } 
+  }   
     vTaskDelay(500 / portTICK_PERIOD_MS);
 }
 

@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "painlessMesh.h"
+#include "spi.h"
 
 #define   MESH_SSID       "meshNetwork"
 #define   MESH_PASSWORD   "meshPassword"

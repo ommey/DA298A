@@ -44,7 +44,6 @@ void IRAM_ATTR NoButton()
   {
     noButtonPressed = true;
     lastDebounceTime1 = currentTime;
-    
   }
 }
 void IRAM_ATTR HelpButton()
@@ -354,6 +353,7 @@ void loop() {
     Serial.println("No pressed");
     printToDisplay("No pressed");
     mesh.sendSingle(leaderID, "No");
+    setLEDOff();
   }
   if (helpButtonPressed) 
   {
@@ -371,5 +371,6 @@ void loop() {
     mesh.sendSingle(leaderID, "Yes");
     firefighter.startMission(missionTargetRow, missionTargetColumn);
     firefighter.leaderID = leaderID;
+    setLEDOff();
   }
 }

@@ -46,3 +46,7 @@ void setLEDColor(uint8_t r, uint8_t g, uint8_t b) {
     RGB_LED.show();
 }
 
+void setLEDOff() {
+    RGB_LED.setPixelColor(0, RGB_LED.Color(0, 0, 0));
+    RGB_LED.show();
+}

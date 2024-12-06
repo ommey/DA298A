@@ -234,7 +234,7 @@ void Firefighter::moveToTarget()
         else 
         {
             state = State::RESCUING_PERSON;
-        }     
+        } 
     }
 }
 
@@ -286,6 +286,7 @@ void Firefighter::moveHazmat()
 
 void Firefighter::rescuePerson()
 {
+    Serial.printf("\nRescuing person");
     if (currentTile->hasEvent(Event::VICTIM) && currentTile == exitTile)
     {
         currentTile->removeEvent(Event::VICTIM);
@@ -308,6 +309,7 @@ void Firefighter::wait()
 {
     if (teamArrived) 
     {
+        Serial.printf("\nTeam has arrived");
         state = State::RESCUING_PERSON;
     }
     else if (nbrFirefighters == 2) 

@@ -27,7 +27,11 @@ int missionTargetRow = 0;
 int missionTargetColumn = 0;
 int positionListCounter = 0;
 
-const unsigned long DEBOUNCE_DELAY = 50; // Debounce delay in milliseconds
+const unsigned long DEBOUNCE_DELAY = 1000; // Debounce delay in milliseconds
+
+volatile bool noButtonPressed = false;
+volatile bool helpButtonPressed = false;
+volatile bool yesButtonPressed = false;
 
 volatile unsigned long lastDebounceTime1 = 0;
 volatile unsigned long lastDebounceTime2 = 0;
@@ -38,10 +42,9 @@ void IRAM_ATTR NoButton()
   unsigned long currentTime = millis();
   if (currentTime - lastDebounceTime1 > DEBOUNCE_DELAY) 
   {
+    noButtonPressed = true;
     lastDebounceTime1 = currentTime;
-    Serial.println("No answered");
-    printToDisplay("No answered"); 
-    mesh.sendSingle(leaderID, "No");
+    
   }
 }
 void IRAM_ATTR HelpButton()
@@ -49,12 +52,8 @@ void IRAM_ATTR HelpButton()
   unsigned long currentTime = millis();
   if (currentTime - lastDebounceTime2 > DEBOUNCE_DELAY) 
   {
+    helpButtonPressed = true;
     lastDebounceTime2 = currentTime;
-    Serial.println("Help requested");
-    printToDisplay("Help requested");
-    // TODO: Hjälpförfrågan sekvens
-    firefighter.positionsList.clear();  // Rensa listan över positioner
-    firefighter.messagesToBroadcast.push("ReqPos");  // Skicka förfrågan om position till alla noder
   }
 }
 void IRAM_ATTR YesButton()
@@ -62,12 +61,8 @@ void IRAM_ATTR YesButton()
   unsigned long currentTime = millis();
   if (currentTime - lastDebounceTime3 > DEBOUNCE_DELAY) 
   {
+    yesButtonPressed = true;
     lastDebounceTime3 = currentTime;
-    Serial.println("Yes answered");
-    printToDisplay("Yes answered");  
-    mesh.sendSingle(leaderID, "Yes");
-    firefighter.startMission(missionTargetRow, missionTargetColumn);
-    firefighter.leaderID = leaderID;
   }
 }
 
@@ -118,7 +113,7 @@ void handlePositions(uint32_t from, std::vector<std::string> tokens)
 {
   float dis = std::sqrt(std::pow(tryParseInt(tokens[1])-firefighter.targetTile->getRow(),2)+std::pow(tryParseInt(tokens[2])-firefighter.targetTile->getColumn(),2));
   firefighter.positionsList.push_back({from, dis}); // Spara nodens position i positionsList
-  if (firefighter.positionsList.size() == mesh.getNodeList(false).size()-1) //Check if all nodes anwsered, if true, start sorting
+  if (firefighter.positionsList.size() == mesh.getNodeList(false).size()-2) //Check if all nodes anwsered, if true, start sorting
   { 
     std::sort(firefighter.positionsList.begin(), firefighter.positionsList.end(),
     [](const std::pair<uint32_t, float>& a, const std::pair<uint32_t, float>& b) {
@@ -218,7 +213,7 @@ void setup()
     }
     else 
     {
-      if (tokens[0] == "Position") 
+      if (tokens[0] == "Pos") 
       {  
         handlePositions(from, tokens);
       }
@@ -352,4 +347,29 @@ void meshUpdate(void *pvParameters)
 }
 
 // inget görs här, aktiviteter sköts i freeRTOS tasks
-void loop() {}
+void loop() {
+  if (noButtonPressed) 
+  {
+    noButtonPressed = false;
+    Serial.println("No pressed");
+    printToDisplay("No pressed");
+    mesh.sendSingle(leaderID, "No");
+  }
+  if (helpButtonPressed) 
+  {
+    helpButtonPressed = false;
+    Serial.println("Help requested");
+    printToDisplay("Help requested");
+    firefighter.positionsList.clear();  // Rensa listan över positioner
+    firefighter.messagesToBroadcast.push("ReqPos");  // Skicka förfrågan om position till alla noder
+  }
+  if (yesButtonPressed) 
+  {
+    yesButtonPressed = false;
+    Serial.println("Yes pressed");
+    printToDisplay("Yes pressed");
+    mesh.sendSingle(leaderID, "Yes");
+    firefighter.startMission(missionTargetRow, missionTargetColumn);
+    firefighter.leaderID = leaderID;
+  }
+}

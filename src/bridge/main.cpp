@@ -6,7 +6,6 @@
 #define   MESH_PASSWORD   "meshPassword"
 #define   MESH_PORT       5555
 
-String nodeName = "bridge"; // namnet på brygg-noden
 painlessMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder
 
 void updateFromGUI(void *pvParameters){

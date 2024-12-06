@@ -13,8 +13,8 @@ Firefighter::Firefighter() : gen(rd()), dist(1, 4)
     }
 
     this->id = 0;
-    this->currentTile = grid[5][7];  // Pekar på första tile
-    this->lastTile = grid[4][7];
+    this->currentTile = grid[3][3];  // Pekar på första tile
+    this->lastTile = grid[3][3];
     this->targetTile = grid[0][0];
     this->exitTile = grid[0][0]; 
     this->state = State::SEARCHING;

@@ -20,8 +20,7 @@ using namespace std;
 #define   MESH_PORT       5555
 
 Firefighter firefighter;
-uint32_t bridgeName = 1; // namnet på brygga-noden
-String nodeName; // namnet på noden
+uint32_t bridgeName = 533097877; // namnet på brygga-noden
 painlessMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
 uint32_t leaderID;  // ID of the node who sent help request
 int missionTargetRow = 0;
@@ -295,7 +294,7 @@ void informAllNodes(void *pvParameters) {
       }
       firefighter.messagesToBroadcast.pop();
     } 
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+       vTaskDelay(500 / portTICK_PERIOD_MS);
   }   
 }
 

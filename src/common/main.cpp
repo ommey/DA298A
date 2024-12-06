@@ -218,7 +218,7 @@ void setup()
     }
     else 
     {
-      if (tokens[0] == "Position") 
+      if (tokens[0] == "Pos") 
       {  
         handlePositions(from, tokens);
       }

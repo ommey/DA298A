@@ -28,25 +28,27 @@ int missionTargetColumn = 0;
 int positionListCounter = 0;
 
 
-void IRAM_ATTR handleButton1() {  //TODO: ändra vad knappen gör
-  printToDisplay("Button 1 pressed\nHjälp");  // Test för att se att knapptryckning fungerar
+void IRAM_ATTR NoButton() 
+{ 
+  Serial.println("No answered");
+  printToDisplay("No answered"); 
+  mesh.sendSingle(leaderID, "No");
+}
+void IRAM_ATTR HelpButton()
+ { 
+  Serial.println("Help requested");
+  printToDisplay("Help requested"); 
   // TODO: Hjälpförfrågan sekvens
   firefighter.positionsList.clear();  // Rensa listan över positioner
   firefighter.messagesToBroadcast.push("ReqPos");
-  // TODO: Sätt waiting state?
 }
-void IRAM_ATTR handleButton2() {// Yes-button
-  printToDisplay("Button 2 pressed");  // Test för att se att knapptryckning fungerar
-  // TODO: Handle button 2 press, when help is requested (maybe bool?), this button is yes.
-  // I think we just want to toggle boolean here
+void IRAM_ATTR YesButton()
+ { 
+  Serial.println("Yes answered");
+  printToDisplay("Yes answered");  
   mesh.sendSingle(leaderID, "Yes");
   firefighter.startMission(missionTargetRow, missionTargetColumn);
   firefighter.leaderID = leaderID;
-  
-}
-void IRAM_ATTR handleButton3() {// No-button
-  printToDisplay("Button 3 pressed");  // Test för att se att knapptryckning fungerar
-  mesh.sendSingle(leaderID, "No");
 }
 
 void informBridge(void *pvParameters);  //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
@@ -78,9 +80,9 @@ bool tryParseInt(const std::string& str)
 {
     try 
     {
-        size_t pos;
-        std::stoi(str, &pos);
-        return pos == str.length();
+        size_t Position;
+        std::stoi(str, &Position);
+        return Position == str.length();
     }
     catch (std::invalid_argument&) 
     {
@@ -103,7 +105,7 @@ void handlePositions(uint32_t from, std::vector<std::string> tokens)
       return a.second < b.second; // Compare by distance
     });
     positionListCounter = 0;
-    for (positionListCounter; positionListCounter < 3; positionListCounter++) {
+    for (positionListCounter; positionListCounter < 1; positionListCounter++) {
       mesh.sendSingle(firefighter.positionsList[positionListCounter].first, "Help " + String(firefighter.targetTile->getRow()) + " " + String(firefighter.targetTile->getColumn()));
     }
   }
@@ -111,15 +113,13 @@ void handlePositions(uint32_t from, std::vector<std::string> tokens)
 
 void handleHelpRequest(uint32_t from, std::vector<std::string> tokens)
 {
+  Serial.printf("\nHelp request received ");
   // TODO: spara id på avsändare.
-  if (!firefighter.hasMission) 
-  {
     leaderID = from;  // Spara id på avsändare
     setLEDColor(0, 0, 255);  // Blå testfärg
     printToDisplay("Help request recieved");
     missionTargetRow = std::stoi(tokens[1]);
     missionTargetColumn = std::stoi(tokens[2]);
-  }
 }
 
 void setup() 
@@ -131,9 +131,9 @@ void setup()
   hardwareInit();
 
   // Attach interrupts to the button pins
-  attachInterrupt(digitalPinToInterrupt(BUTTON_1), handleButton1, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_2), handleButton2, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_3), handleButton3, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_1), NoButton, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_2), HelpButton, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_3), YesButton, FALLING);
 
 
   //mesh.setDebugMsgTypes(ERROR | CONNECTION);
@@ -198,7 +198,7 @@ void setup()
     }
     else 
     {
-      if (tokens[0] == "Pos") 
+      if (tokens[0] == "Position") 
       {  
         handlePositions(from, tokens);
       }
@@ -248,9 +248,9 @@ void newConnectionCallback(uint32_t nodeId)
 {
     //Serial.printf("New Connection, nodeId = %u\n", nodeId);
 
-    // Send this node's Pussyition to the new connection
-    String PussyMsg = "Pussy:" + String(firefighter.currentTile->getRow()) + "," + String(firefighter.currentTile->getColumn());
-    mesh.sendSingle(nodeId, PussyMsg);
+    // Send this node's Positionition to the new connection
+    String PositionMsg = "Position:" + String(firefighter.currentTile->getRow()) + "," + String(firefighter.currentTile->getColumn());
+    mesh.sendSingle(nodeId, PositionMsg);
 }
 
 void informBridge(void *pvParameters) {

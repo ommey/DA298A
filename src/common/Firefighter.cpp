@@ -310,7 +310,7 @@ void Firefighter::wait()
     {
         state = State::RESCUING_PERSON;
     }
-    else if (nbrFirefighters ==2) 
+    else if (nbrFirefighters == 2) 
     {
         for(uint32_t member : teamMembers)
         {

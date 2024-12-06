@@ -27,28 +27,48 @@ int missionTargetRow = 0;
 int missionTargetColumn = 0;
 int positionListCounter = 0;
 
+const unsigned long DEBOUNCE_DELAY = 50; // Debounce delay in milliseconds
+
+volatile unsigned long lastDebounceTime1 = 0;
+volatile unsigned long lastDebounceTime2 = 0;
+volatile unsigned long lastDebounceTime3 = 0;
 
 void IRAM_ATTR NoButton() 
 { 
-  Serial.println("No answered");
-  printToDisplay("No answered"); 
-  mesh.sendSingle(leaderID, "No");
+  unsigned long currentTime = millis();
+  if (currentTime - lastDebounceTime1 > DEBOUNCE_DELAY) 
+  {
+    lastDebounceTime1 = currentTime;
+    Serial.println("No answered");
+    printToDisplay("No answered"); 
+    mesh.sendSingle(leaderID, "No");
+  }
 }
 void IRAM_ATTR HelpButton()
  { 
-  Serial.println("Help requested");
-  printToDisplay("Help requested"); 
-  // TODO: Hjälpförfrågan sekvens
-  firefighter.positionsList.clear();  // Rensa listan över positioner
-  firefighter.messagesToBroadcast.push("ReqPos");
+  unsigned long currentTime = millis();
+  if (currentTime - lastDebounceTime2 > DEBOUNCE_DELAY) 
+  {
+    lastDebounceTime2 = currentTime;
+    Serial.println("Help requested");
+    printToDisplay("Help requested");
+    // TODO: Hjälpförfrågan sekvens
+    firefighter.positionsList.clear();  // Rensa listan över positioner
+    firefighter.messagesToBroadcast.push("ReqPos");  // Skicka förfrågan om position till alla noder
+  }
 }
 void IRAM_ATTR YesButton()
  { 
-  Serial.println("Yes answered");
-  printToDisplay("Yes answered");  
-  mesh.sendSingle(leaderID, "Yes");
-  firefighter.startMission(missionTargetRow, missionTargetColumn);
-  firefighter.leaderID = leaderID;
+  unsigned long currentTime = millis();
+  if (currentTime - lastDebounceTime3 > DEBOUNCE_DELAY) 
+  {
+    lastDebounceTime3 = currentTime;
+    Serial.println("Yes answered");
+    printToDisplay("Yes answered");  
+    mesh.sendSingle(leaderID, "Yes");
+    firefighter.startMission(missionTargetRow, missionTargetColumn);
+    firefighter.leaderID = leaderID;
+  }
 }
 
 void informBridge(void *pvParameters);  //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
@@ -115,11 +135,11 @@ void handleHelpRequest(uint32_t from, std::vector<std::string> tokens)
 {
   Serial.printf("\nHelp request received ");
   // TODO: spara id på avsändare.
-    leaderID = from;  // Spara id på avsändare
-    setLEDColor(0, 0, 255);  // Blå testfärg
-    printToDisplay("Help request recieved");
-    missionTargetRow = std::stoi(tokens[1]);
-    missionTargetColumn = std::stoi(tokens[2]);
+  leaderID = from;  // Spara id på avsändare
+  setLEDColor(0, 0, 255);  // Blå testfärg
+  printToDisplay("Help request recieved");
+  missionTargetRow = std::stoi(tokens[1]);
+  missionTargetColumn = std::stoi(tokens[2]);
 }
 
 void setup() 

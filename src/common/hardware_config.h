@@ -1,5 +1,5 @@
-#ifndef HARDWARE_CONFIG_H
-#define HARDWARE_CONFIG_H
+#ifndef HARDWARE_CONFIG_H_
+#define HARDWARE_CONFIG_H_
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>

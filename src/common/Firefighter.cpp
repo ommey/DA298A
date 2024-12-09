@@ -1,7 +1,6 @@
 #include "Firefighter.h"
-#include "Tile.h"
 
-Firefighter::Firefighter() : gen(rd()), dist(1, 4) 
+Firefighter::Firefighter() : gen(esp_random()), dist(1, 4) // TODO: testar annan seed för random og="rd"
 {
     // Allokera minne för varje Tile och spara pekarna i grid
     for (int row = 0; row < 6; ++row)
@@ -17,9 +16,10 @@ Firefighter::Firefighter() : gen(rd()), dist(1, 4)
     this->lastTile = grid[3][3];
     this->targetTile = grid[0][0];
     this->exitTile = grid[0][0]; 
-    this->state = State::SEARCHING;
     this->hasMission = false;
     this->nbrFirefighters = 1;
+
+    changeState();
     
     addWalls();
 }
@@ -49,7 +49,6 @@ void Firefighter::move(const Tile* destination)
     {
         new_column = currentTile->getColumn() + 1;
     } 
-
     if (currentTile->getColumn() == new_column && destination->getRow() < currentTile->getRow()) 
     {
         new_row = currentTile->getRow() - 1;
@@ -58,7 +57,6 @@ void Firefighter::move(const Tile* destination)
     {
         new_row = currentTile->getRow() + 1;
     } 
-    
     if (new_row < 0 || new_row >= 6 || new_column < 0 || new_column >= 8)
     {
         //Serial.println("Fel: ny position utanför gränserna.\n");
@@ -109,31 +107,39 @@ void Firefighter::changeState()
     if (hasMission) 
     {
       //Serial.printf("Goes to target\n");
+      //printToDisplay("Goes to target");
       state = State::MOVING_TO_TARGET;
     }
     else if (checkForEvent(currentTile, Event::VICTIM))
     {
       //Serial.printf("Goes to picking up person\n");
+      //printToDisplay("Goes to picking up person");
+      String msg = "Victim saved " + String(targetTile->getRow()) + " " + String(targetTile->getColumn());
+      messagesToBroadcast.push(msg);
       state = State::MOVING_TO_TARGET; 
     }
     else if (checkForEvent(currentTile, Event::FIRE)) 
     {
       //Serial.printf("Goes to putting out fire\n");
+      //printToDisplay("Goes to putting out fire");
       state = State::PUTTING_OUT_FIRE;
     } 
     else if (checkForEvent(currentTile, Event::SMOKE))
     {
       //Serial.printf("Goes to putting out smoke\n");
+      //printToDisplay("Goes to putting out smoke");
       state = State::PUTTING_OUT_SMOKE;
     } 
     else if (checkForEvent(currentTile, Event::HAZMAT))
     {
       //Serial.printf("Goes to picking up material\n");
+      //printToDisplay("Goes to picking up material");
       state = State::MOVING_HAZMAT;
     } 
     else 
     {
       //Serial.printf("Goes to searching\n");
+      //printToDisplay("Goes to searching");
       state = State::SEARCHING;
     }
 }
@@ -164,7 +170,6 @@ bool Firefighter::atDeadEnd()
     } 
     return false;
 }
-
 
 void Firefighter::searchForTarget()
 {
@@ -226,15 +231,7 @@ void Firefighter::moveToTarget()
     if (currentTile == targetTile)    
     {         
         messagesToNode.push(std::make_pair(leaderID, "Arrived"));
-       
-        if (!teamArrived)
-        {
-            state = State::WAITING;
-        }
-        else 
-        {
-            state = State::RESCUING_PERSON;
-        } 
+        state = State::WAITING;
     }
 }
 
@@ -286,12 +283,14 @@ void Firefighter::moveHazmat()
 
 void Firefighter::rescuePerson()
 {
-    Serial.printf("\nRescuing person");
+    //Serial.printf("\nRescuing person");
+    //printToDisplay("Rescuing person");
     if (currentTile->hasEvent(Event::VICTIM) && currentTile == exitTile)
     {
         currentTile->removeEvent(Event::VICTIM);
         messagesToBridge.push("Victim saved " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()));
         hasMission = false;
+        teamArrived = false;
         changeState();
     }
     else if (currentTile->hasEvent(Event::VICTIM))
@@ -309,7 +308,8 @@ void Firefighter::wait()
 {
     if (teamArrived) 
     {
-        Serial.printf("\nTeam has arrived");
+        //Serial.printf("\nTeam has arrived");
+        //printToDisplay("Team has arrived");
         state = State::RESCUING_PERSON;
     }
     else if (nbrFirefighters == 2) 
@@ -332,7 +332,9 @@ void Firefighter::TeamArrived()
 void Firefighter::startMission(int row, int column)
 {
     targetTile = grid[row][column];
+    grid[row][column]->addEvent(Event::VICTIM);
     hasMission = true;
+    state = State::MOVING_TO_TARGET; 
 }
 
 void Firefighter::Die()
@@ -483,5 +485,3 @@ void Firefighter::printGrid() {
         }
     }
 }
-
-

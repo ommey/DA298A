@@ -9,9 +9,8 @@
 #include <cmath>
 #include <unordered_map>
 #include <string>
-#include "hardware_config.h"
+//#include "hardware_config.h"
 #include "painlessMesh.h"
-
 
 using namespace std;
 
@@ -118,8 +117,11 @@ void handlePositions(uint32_t from, std::vector<std::string> tokens)
     [](const std::pair<uint32_t, float>& a, const std::pair<uint32_t, float>& b) {
       return a.second < b.second; // Compare by distance
     });
+    
     positionListCounter = 0;
     for (positionListCounter; positionListCounter < 1; positionListCounter++) {
+      //Serial.printf("Called firefighter: %u with distance: %f\n", firefighter.positionsList[positionListCounter].first, firefighter.positionsList[positionListCounter].second);
+      printToDisplay("Called firefighter: " + String(firefighter.positionsList[positionListCounter].first) + " with distance: " + String(firefighter.positionsList[positionListCounter].second));
       mesh.sendSingle(firefighter.positionsList[positionListCounter].first, "Help " + String(firefighter.targetTile->getRow()) + " " + String(firefighter.targetTile->getColumn()));
     }
   }
@@ -127,7 +129,7 @@ void handlePositions(uint32_t from, std::vector<std::string> tokens)
 
 void handleHelpRequest(uint32_t from, std::vector<std::string> tokens)
 {
-  Serial.printf("\nHelp request received ");
+  //Serial.printf("\nHelp request received ");
   // TODO: spara id på avsändare.
   leaderID = from;  // Spara id på avsändare
   setLEDColor(0, 0, 255);  // Blå testfärg
@@ -154,7 +156,8 @@ void setup()
   mesh.init(MESH_SSID, MESH_PASSWORD, MESH_PORT);  // Starta meshen
 
   mesh.onReceive([](uint32_t from, String &msg) {
-    Serial.println(msg.c_str());
+    //Serial.println(msg.c_str());
+    printToDisplay("recieved: " + msg);
 
     std::vector<std::string> tokens = tokenize(msg.c_str());
 
@@ -231,6 +234,8 @@ void setup()
       else if (tokens[0] == "No") 
       {  
         mesh.sendSingle(firefighter.positionsList[positionListCounter].first, "Help " + String(firefighter.targetTile->getRow()) + " " + String(firefighter.targetTile->getColumn()));
+        //Serial.printf("Called firefighter: %u with distance: %f\n", firefighter.positionsList[positionListCounter].first, firefighter.positionsList[positionListCounter].second);
+        printToDisplay("Called firefighter: " + String(firefighter.positionsList[positionListCounter].first) + " with distance: " + String(firefighter.positionsList[positionListCounter].second));
         positionListCounter++;
       }
       else if (tokens[0] == "Arrived")
@@ -240,6 +245,18 @@ void setup()
       else if (tokens[0] == "TeamArrived")
       {
         firefighter.TeamArrived();
+      } else if (tokens[0] == "Hazmat") {
+        size_t row;
+        size_t column;
+        std::stoi(tokens[2], &row);
+        std::stoi(tokens[3], &column);
+        firefighter.grid[row][column]->removeEvent(Event::HAZMAT);
+      } else if (tokens[0] == "Victim") {
+        size_t row;
+        size_t column;
+        std::stoi(tokens[2], &row);
+        std::stoi(tokens[3], &column);
+        firefighter.grid[row][column]->removeEvent(Event::VICTIM);
       }
     }
   });
@@ -271,7 +288,8 @@ void informBridge(void *pvParameters) {
   while (1) {
      if (!firefighter.messagesToBridge.empty()) {
       String msg = firefighter.messagesToBridge.front();
-      Serial.println(msg);
+      //Serial.println(msg);
+      printToDisplay("sent tB: " + msg);
 
       if (!mesh.sendSingle(bridgeName, msg)) {
         //Serial.println("Message send failed!");
@@ -350,7 +368,7 @@ void loop() {
   if (noButtonPressed) 
   {
     noButtonPressed = false;
-    Serial.println("No pressed");
+    //Serial.println("No pressed");
     printToDisplay("No pressed");
     mesh.sendSingle(leaderID, "No");
     setLEDOff();
@@ -358,7 +376,7 @@ void loop() {
   if (helpButtonPressed) 
   {
     helpButtonPressed = false;
-    Serial.println("Help requested");
+    //Serial.println("Help requested");
     printToDisplay("Help requested");
     firefighter.positionsList.clear();  // Rensa listan över positioner
     firefighter.messagesToBroadcast.push("ReqPos");  // Skicka förfrågan om position till alla noder
@@ -366,7 +384,7 @@ void loop() {
   if (yesButtonPressed) 
   {
     yesButtonPressed = false;
-    Serial.println("Yes pressed");
+    //Serial.println("Yes pressed");
     printToDisplay("Yes pressed");
     mesh.sendSingle(leaderID, "Yes");
     firefighter.startMission(missionTargetRow, missionTargetColumn);

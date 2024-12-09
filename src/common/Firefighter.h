@@ -7,6 +7,7 @@
 #include <queue>
 #include <arduino.h>
 #include <map>
+#include "hardware_config.h"
 
 using namespace std;
 

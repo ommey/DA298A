@@ -114,7 +114,7 @@ void Firefighter::changeState()
     {
       //Serial.printf("Goes to picking up person\n");
       //printToDisplay("Goes to picking up person");
-      String msg = "Victim saved " + String(targetTile->getRow()) + " " + String(targetTile->getColumn());
+      String msg = "RemoveVictim " + String(targetTile->getRow()) + " " + String(targetTile->getColumn());
       messagesToBroadcast.push(msg);
       state = State::MOVING_TO_TARGET; 
     }
@@ -277,7 +277,7 @@ void Firefighter::moveHazmat()
     else
     {
         move(targetTile);
-        messagesToBroadcast.push("Hazmat saved " + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
+        messagesToBroadcast.push("RemoveHazmat " + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
     }
 }
 
@@ -337,9 +337,12 @@ void Firefighter::startMission(int row, int column)
     state = State::MOVING_TO_TARGET; 
 }
 
-void Firefighter::Die()
+void Firefighter::Die(int row, int column)
 {
-    state = State::DEAD;
+    if (currentTile->getRow() == row && currentTile->getColumn() == column)
+    {
+        state = State::DEAD;
+    }
 }
         
 void Firefighter::Tick() 
@@ -384,7 +387,6 @@ void Firefighter::Tick()
             break;  
         case State::DEAD:
             //Serial.println("DEAD\n");
-            Die();
             break; 
         case State::WAITING:
             //Serial.println("WAITING\n");

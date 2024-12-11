@@ -66,7 +66,7 @@ class Firefighter
         void rescuePerson();
         void move(const Tile* destination);
         bool ChangeState(Tile* tile);
-        void Die();
+        void Die(int row, int column);
         void addWalls();
         void wait();
         void TeamArrived();

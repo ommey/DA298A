@@ -114,6 +114,7 @@ void handlePositions(uint32_t from, int row, int column)
     });
     
     positionListCounter = 0;
+    
     for (positionListCounter; positionListCounter < 1; positionListCounter++) 
     {
       printToDisplay("Called firefighter: " + String(firefighter.positionsList[positionListCounter].first) + " with distance: " + String(firefighter.positionsList[positionListCounter].second));
@@ -206,6 +207,10 @@ void setup()
       {
         firefighter.grid[row][column]->removeEvent(Event::VICTIM);
       }
+      else if (tokens[0] == "Hazmat")
+      {
+        firefighter.grid[row][column]->addEvent(Event::HAZMAT);
+      } 
     }     
     else 
     {
@@ -218,10 +223,16 @@ void setup()
         firefighter.teamMembers.push_back(from);
       }
       else if (tokens[0] == "No") 
-      {  
+      { 
+        for (int i = 0; i < firefighter.teamMembers.size(); i++) {
+            if (firefighter.positionsList[positionListCounter].first == firefighter.teamMembers[i]) {
+              i = 0;
+              positionListCounter = (positionListCounter + 1) % firefighter.positionsList.size();
+            }
+        }
         mesh.sendSingle(firefighter.positionsList[positionListCounter].first, "Help " + String(firefighter.targetTile->getRow()) + " " + String(firefighter.targetTile->getColumn()));
         printToDisplay("Called firefighter: " + String(firefighter.positionsList[positionListCounter].first) + " with distance: " + String(firefighter.positionsList[positionListCounter].second));
-        positionListCounter++;
+        positionListCounter = (positionListCounter + 1) % firefighter.positionsList.size();
       }
       else if (tokens[0] == "Arrived")
       {

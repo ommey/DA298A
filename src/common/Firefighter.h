@@ -8,6 +8,8 @@
 #include <arduino.h>
 #include <map>
 #include "hardware_config.h"
+#include <unordered_map>
+
 
 using namespace std;
 
@@ -50,7 +52,7 @@ class Firefighter
         queue<std::pair<uint32_t, String>> messagesToNode; // meddelanden som ska skickas till en specific nod
 
         std::vector<std::pair<uint32_t, float>> positionsList; // Map of node IDs to their positions
-
+        std::vector<Tile*> pathToTarget; // Sparar den genererade vägen
 
         Firefighter();
         ~Firefighter();  // Destructor for cleaning up dynamic memory
@@ -80,6 +82,7 @@ class Firefighter
         void cleanupGrid();
 
         void printGrid();
+        void bfsTo(Tile* destination);
 };
 
 #endif  // FIREFIGHTER_H_

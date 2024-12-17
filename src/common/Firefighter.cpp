@@ -34,36 +34,84 @@ int Firefighter::getId() const
     return id;
 }    
 
+void Firefighter::bfsTo(Tile* destination)
+{
+    if (currentTile == destination) return;  // Om vi redan är vid målet, gör ingenting.
+
+    std::queue<Tile*> toVisit;  // BFS-kö för att hålla reda på vilka rutor som ska utforskas.
+    std::unordered_map<Tile*, Tile*> parent;  // För att återskapa vägen från destination tillbaka till start.
+    std::unordered_map<Tile*, bool> visited;  // Markera vilka rutor vi har besökt.
+    pathToTarget.clear();  // Rensa eventuell tidigare beräknad väg.
+
+    // Starta BFS från nuvarande ruta
+    toVisit.push(currentTile);
+    visited[currentTile] = true;
+    parent[currentTile] = nullptr;
+
+    bool found = false;  // Flagga för att hålla koll på om destinationen har hittats.
+
+    while (!toVisit.empty() && !found)
+    {
+        Tile* tile = toVisit.front();  // Hämta den första rutan i kön.
+        toVisit.pop();  // Ta bort rutan från kön.
+
+        // Definiera möjliga riktningar: NORTH, EAST, SOUTH, WEST.
+        std::vector<std::pair<int, int>> directions = {
+            {-1, 0}, {0, 1}, {1, 0}, {0, -1}  // (-1,0)=NORTH, (0,1)=EAST, (1,0)=SOUTH, (0,-1)=WEST.
+        };
+
+        for (auto& dir : directions)  // Gå igenom alla riktningar.
+        {
+            int newRow = tile->getRow() + dir.first;  // Beräkna ny rad.
+            int newCol = tile->getColumn() + dir.second;  // Beräkna ny kolumn.
+
+            // Kontrollera att den nya positionen är inom rutnätets gränser.
+            if (newRow >= 0 && newRow < 6 && newCol >= 0 && newCol < 8)
+            {
+                Tile* neighbor = grid[newRow][newCol];  // Hämta grannen från rutnätet.
+
+                // Kontrollera att grannen:
+                // 1. Inte är besökt.
+                // 2. Inte har en vägg i den aktuella riktningen.
+                if (!visited[neighbor] &&
+                    !tile->hasWall(static_cast<Wall>(
+                        dir.first == -1 ? Wall::NORTH :
+                        dir.first == 1 ? Wall::SOUTH :
+                        dir.second == 1 ? Wall::EAST : Wall::WEST)))
+                {
+                    visited[neighbor] = true;  // Markera grannen som besökt.
+                    parent[neighbor] = tile;  // Spara varifrån vi kom.
+                    toVisit.push(neighbor);  // Lägg grannen i kön.
+
+                    // Kontrollera om vi har nått destinationen.
+                    if (neighbor == destination)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Om destinationen hittades, rekonstruera vägen.
+    if (found)
+    {
+        Tile* step = destination;  // Börja från destinationen.
+        while (step != nullptr)  // Backtracka tills vi når startpunkten.
+        {
+            pathToTarget.push_back(step);  // Lägg till rutan i vägen.
+            step = parent[step];  // Gå till föräldern.
+        }
+        std::reverse(pathToTarget.begin(), pathToTarget.end());  // Vänd vägen så att den går från start → mål.
+    }
+}
+
+
 void Firefighter::move(const Tile* destination)
 {  
     lastTile = currentTile;
-
-    int new_row = currentTile->getRow();  
-    int new_column = currentTile->getColumn(); 
-          
-    if (destination->getColumn() < currentTile->getColumn()) 
-    {
-        new_column = currentTile->getColumn() - 1;
-    }
-    else if (destination->getColumn() > currentTile->getColumn()) 
-    {
-        new_column = currentTile->getColumn() + 1;
-    } 
-    if (currentTile->getColumn() == new_column && destination->getRow() < currentTile->getRow()) 
-    {
-        new_row = currentTile->getRow() - 1;
-    }
-    else if (currentTile->getColumn() == new_column && destination->getRow() > currentTile->getRow()) 
-    {
-        new_row = currentTile->getRow() + 1;
-    } 
-    if (new_row < 0 || new_row >= 6 || new_column < 0 || new_column >= 8)
-    {
-        //Serial.println("Fel: ny position utanför gränserna.\n");
-        return;
-    }
-
-    currentTile = grid[new_row][new_column];
+    currentTile = grid[destination->getRow()][destination->getColumn()];
     String msg = "Firefighter from " + String(lastTile->getRow()) + " " + String(lastTile->getColumn()) + " to " + currentTile->getRow() + " " + currentTile->getColumn();
     messagesToBridge.push(msg);
 }
@@ -224,17 +272,19 @@ void Firefighter::searchForTarget()
 
 void Firefighter::moveToTarget()
 {
-    if (currentTile != targetTile)
+    if (currentTile != targetTile && pathToTarget.empty())
     {
-        move(targetTile);
-    } 
+        bfsTo(targetTile);
+    }
     if (currentTile == targetTile)    
     {         
         messagesToNode.push(std::make_pair(leaderID, "Arrived"));
         state = State::WAITING;
+    } else {
+        move(pathToTarget.front());
+        pathToTarget.erase(pathToTarget.begin());
     }
 }
-
 
 void Firefighter::extinguishFire()
 {
@@ -260,31 +310,35 @@ void Firefighter::extinguishSmoke()
 
 void Firefighter::moveHazmat()
 {
+    // Om brandmannen är vid exitTile med HAZMAT-materialet
     if (currentTile->hasEvent(Event::HAZMAT) && currentTile == exitTile)
     {
-        currentTile->removeEvent(Event::HAZMAT);
+        currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT från rutan.
         messagesToBridge.push("Hazmat saved " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()));
-        changeState();
+        changeState();  // Byt state.
     }
+    // Om brandmannen har HAZMAT på sin nuvarande ruta men inte är vid exitTile
     else if (currentTile->hasEvent(Event::HAZMAT))
     {
-        currentTile->removeEvent(Event::HAZMAT);
-        move(exitTile);
-        currentTile->addEvent(Event::HAZMAT);
-        String msg = "Hazmat from " + String(lastTile->getRow()) + " " + String(lastTile->getColumn()) + " to " + String(currentTile->getRow()) + " " + String(currentTile->getColumn());
-        messagesToBridge.push(msg);
-    } 
+        currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT temporärt.
+        Tile* nextStep = pathToTarget.front(); 
+        move(nextStep);
+        pathToTarget.erase(pathToTarget.begin());
+        currentTile->addEvent(Event::HAZMAT);  // Lägg tillbaka HAZMAT på rutan.
+    }
+    //FF flyttar till rutan med hazmat
     else
     {
         move(targetTile);
+        bfsTo(exitTile);  // Beräkna kortaste vägen till exitTile.
+        pathToTarget.erase(pathToTarget.begin());  // Ta bort det aktuella steget från vägen.
         messagesToBroadcast.push("RemoveHazmat " + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
+
     }
 }
 
 void Firefighter::rescuePerson()
 {
-    //Serial.printf("\nRescuing person");
-    //printToDisplay("Rescuing person");
     if (currentTile->hasEvent(Event::VICTIM) && currentTile == exitTile)
     {
         currentTile->removeEvent(Event::VICTIM);
@@ -293,11 +347,14 @@ void Firefighter::rescuePerson()
         teamArrived = false;
         changeState();
     }
+    // Om brandmannen har ett offer men inte är vid exitTile
     else if (currentTile->hasEvent(Event::VICTIM))
     {
         String msg = "Victim from " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()) + " to ";
         currentTile->removeEvent(Event::VICTIM);
-        move(exitTile);
+        Tile* nextStep = pathToTarget.front();  // Hämta nästa steg.
+        move(nextStep);  // Flytta till nästa ruta.
+        pathToTarget.erase(pathToTarget.begin());
         currentTile->addEvent(Event::VICTIM);
         msg += String(currentTile->getRow()) + " " + String(currentTile->getColumn());
         messagesToBridge.push(msg);
@@ -327,10 +384,14 @@ void Firefighter::wait()
 void Firefighter::TeamArrived()
 {
     teamArrived = true;
+    bfsTo(exitTile);
 }
 
 void Firefighter::startMission(int row, int column)
 {
+    if (state == State::MOVING_HAZMAT) {
+        messagesToBroadcast.push("Hazmat " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()));
+    }
     targetTile = grid[row][column];
     grid[row][column]->addEvent(Event::VICTIM);
     hasMission = true;

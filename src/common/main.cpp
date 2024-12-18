@@ -19,7 +19,7 @@ using namespace std;
 #define   MESH_PORT       5555
 
 Firefighter firefighter;
-uint32_t bridgeName = 533097877; // namnet på brygga-noden
+uint32_t bridgeName = 244620401; // namnet på brygga-noden
 painlessMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
 uint32_t leaderID;  // ID of the node who sent help request
 int missionTargetRow = 0;
@@ -131,6 +131,8 @@ void handleHelpRequest(uint32_t from, int row, int column)
   printToDisplay("Help request recieved");
   missionTargetRow = row;
   missionTargetColumn = column;
+  firefighter.tickCounter = 0;
+  firefighter.pendingHelp = true;
 }
 
 void setup() 
@@ -197,7 +199,8 @@ void setup()
       }
       else if (tokens[0] == "Help") 
       {
-        handleHelpRequest(from, row, column);        
+        handleHelpRequest(from, row, column);
+        
       }
       else if (tokens[0] == "RemoveHazmat")
       {
@@ -219,11 +222,13 @@ void setup()
         mesh.sendSingle(from, "Pos " + String(firefighter.currentTile->getRow()) + " " + String(firefighter.currentTile->getColumn()));
       }
       else if (tokens[0] == "Yes") 
-      {        
+      { 
+        printToDisplay("Yes recieved");       
         firefighter.teamMembers.push_back(from);
       }
       else if (tokens[0] == "No") 
       { 
+        printToDisplay("No recieved");
         for (int i = 0; i < firefighter.teamMembers.size(); i++) {
             if (firefighter.positionsList[positionListCounter].first == firefighter.teamMembers[i]) {
               i = 0;
@@ -231,7 +236,6 @@ void setup()
             }
         }
         mesh.sendSingle(firefighter.positionsList[positionListCounter].first, "Help " + String(firefighter.targetTile->getRow()) + " " + String(firefighter.targetTile->getColumn()));
-        printToDisplay("Called firefighter: " + String(firefighter.positionsList[positionListCounter].first) + " with distance: " + String(firefighter.positionsList[positionListCounter].second));
         positionListCounter = (positionListCounter + 1) % firefighter.positionsList.size();
       }
       else if (tokens[0] == "Arrived")

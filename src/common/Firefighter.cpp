@@ -279,6 +279,7 @@ void Firefighter::moveToTarget()
     if (currentTile == targetTile)    
     {         
         messagesToNode.push(std::make_pair(leaderID, "Arrived"));
+        setLEDColor(200,0,150);
         state = State::WAITING;
     } else {
         move(pathToTarget.front());
@@ -323,6 +324,8 @@ void Firefighter::moveHazmat()
         currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT temporärt.
         Tile* nextStep = pathToTarget.front(); 
         move(nextStep);
+        String msg = "Hazmat from " + String(lastTile->getRow()) + " " + String(lastTile->getColumn()) + " to " + String(currentTile->getRow()) + " " + String(currentTile->getColumn());
+        messagesToBridge.push(msg);
         pathToTarget.erase(pathToTarget.begin());
         currentTile->addEvent(Event::HAZMAT);  // Lägg tillbaka HAZMAT på rutan.
     }
@@ -350,6 +353,7 @@ void Firefighter::rescuePerson()
     // Om brandmannen har ett offer men inte är vid exitTile
     else if (currentTile->hasEvent(Event::VICTIM))
     {
+        setLEDOff();
         String msg = "Victim from " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()) + " to ";
         currentTile->removeEvent(Event::VICTIM);
         Tile* nextStep = pathToTarget.front();  // Hämta nästa steg.
@@ -408,6 +412,14 @@ void Firefighter::Die(int row, int column)
         
 void Firefighter::Tick() 
 {
+    if (pendingHelp) {
+        tickCounter++;
+        if (tickCounter >= 3) {
+            messagesToNode.push(std::make_pair(leaderID, "No"));
+            tickCounter = 0;
+            pendingHelp = false;
+        }
+    }
     //Serial.printf("Coordinates: %d, %d\n", currentTile->getRow(), currentTile->getColumn());
     if (state == State::SEARCHING)
     {

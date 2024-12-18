@@ -46,6 +46,8 @@ class Firefighter
         int nbrFirefighters;
         uint32_t leaderID; 
         std::vector<uint32_t> teamMembers;
+        bool pendingHelp = false;
+        int tickCounter = 0;
 
         queue<String> messagesToBridge; // meddelanden som ska skickas till bridge
         queue<String> messagesToBroadcast; // meddelanden som ska skickas till alla noder (inte till bridge)

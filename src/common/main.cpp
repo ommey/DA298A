@@ -21,7 +21,6 @@ using namespace std;
 Firefighter firefighter;
 uint32_t bridgeName = 244620401; // namnet på brygga-noden
 painlessMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
-uint32_t leaderID;  // ID of the node who sent help request
 int missionTargetRow = 0;
 int missionTargetColumn = 0;
 int positionListCounter = 0;
@@ -126,8 +125,8 @@ void handlePositions(uint32_t from, int row, int column)
 void handleHelpRequest(uint32_t from, int row, int column)
 {
   // TODO: spara id på avsändare.
-  leaderID = from;  // Spara id på avsändare
-  setLEDColor(0, 0, 255);  // Blå testfärg
+  firefighter.leaderID = from;  // Spara id på avsändare
+  setLEDColor(0, 0, 255);  // Blå hjälpfärg
   printToDisplay("Help request recieved");
   missionTargetRow = row;
   missionTargetColumn = column;
@@ -367,7 +366,7 @@ void loop()
   {
     noButtonPressed = false;
     printToDisplay("No pressed");
-    mesh.sendSingle(leaderID, "No");
+    mesh.sendSingle(firefighter.leaderID, "No");
     setLEDOff();
   }
 
@@ -383,9 +382,8 @@ void loop()
   {
     yesButtonPressed = false;
     printToDisplay("Yes pressed");
-    mesh.sendSingle(leaderID, "Yes");
+    mesh.sendSingle(firefighter.leaderID, "Yes");
     firefighter.startMission(missionTargetRow, missionTargetColumn);
-    firefighter.leaderID = leaderID;
     setLEDOff(); 
   }  
 }

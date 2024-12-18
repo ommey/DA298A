@@ -279,7 +279,7 @@ void Firefighter::moveToTarget()
     if (currentTile == targetTile)    
     {         
         messagesToNode.push(std::make_pair(leaderID, "Arrived"));
-        setLEDColor(200,0,150);
+        setLEDColor(255,0,0);
         state = State::WAITING;
     } else {
         move(pathToTarget.front());
@@ -420,7 +420,6 @@ void Firefighter::Tick()
             pendingHelp = false;
         }
     }
-    //Serial.printf("Coordinates: %d, %d\n", currentTile->getRow(), currentTile->getColumn());
     if (state == State::SEARCHING)
     {
         if (atDeadEnd())

@@ -353,7 +353,6 @@ void Firefighter::rescuePerson()
     // Om brandmannen har ett offer men inte är vid exitTile
     else if (currentTile->hasEvent(Event::VICTIM))
     {
-        setLEDOff();
         String msg = "Victim from " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()) + " to ";
         currentTile->removeEvent(Event::VICTIM);
         Tile* nextStep = pathToTarget.front();  // Hämta nästa steg.
@@ -369,8 +368,8 @@ void Firefighter::wait()
 {
     if (teamArrived) 
     {
-        //Serial.printf("\nTeam has arrived");
-        //printToDisplay("Team has arrived");
+        printToDisplay("Team has arrived");
+        setLEDOff();
         state = State::RESCUING_PERSON;
     }
     else if (nbrFirefighters == 2) 

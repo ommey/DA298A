@@ -362,7 +362,7 @@ void loop()
   checkDebouncedButton(helpButtonRaw, lastDebounceTime2, helpButtonPressed);
   checkDebouncedButton(yesButtonRaw, lastDebounceTime3, yesButtonPressed);
 
-  if (noButtonPressed) 
+  if (noButtonPressed)
   {
     noButtonPressed = false;
     printToDisplay("No pressed");

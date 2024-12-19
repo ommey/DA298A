@@ -4,11 +4,12 @@
 #include "Tile.h"
 #include <array>
 #include <random>
-#include <queue>
 #include <arduino.h>
 #include <map>
 #include "hardware_config.h"
 #include <unordered_map>
+#include <queue>
+#include "Comms.h"
 
 
 using namespace std;
@@ -28,39 +29,31 @@ enum class State
 class Firefighter
 {
     private:
-        random_device rd;
-        std::mt19937 gen;
-        std::uniform_int_distribution<> dist;
-        int id;
-        State state; 
-        Tile* lastTile;     
-        Tile* exitTile; 
-        bool teamArrived;
-
-    public:
-        // Grid of pointers to Tile objects
-        Tile* grid[6][8]; // Dynamically allocated grid of pointers
+        Tile* grid[6][8]; 
         Tile* currentTile;
         Tile* targetTile; 
-        bool hasMission;
-        int nbrFirefighters;
-        uint32_t leaderID; 
-        std::vector<uint32_t> teamMembers;
-        bool pendingHelp = false;
+        Tile* lastTile;     
+        Tile* exitTile;
+        int missionTargetRow = 0;
+        int missionTargetColumn = 0;
+        int positionListCounter = 0;
         int tickCounter = 0;
+        int nbrFirefighters;
+        bool hasMission;
+        bool pendingHelp = false;
+        bool teamArrived;
+        std::mt19937 gen;
+        std::uniform_int_distribution<> dist;
+        State state;  
 
-        queue<String> messagesToBridge; // meddelanden som ska skickas till bridge
-        queue<String> messagesToBroadcast; // meddelanden som ska skickas till alla noder (inte till bridge)
-        queue<std::pair<uint32_t, String>> messagesToNode; // meddelanden som ska skickas till en specific nod
-
+        std::vector<String> tokenize(const String& expression);
+        std::vector<uint32_t> teamMembers;
         std::vector<std::pair<uint32_t, float>> positionsList; // Map of node IDs to their positions
         std::vector<Tile*> pathToTarget; // Sparar den genererade vägen
-
-        Firefighter();
-        ~Firefighter();  // Destructor for cleaning up dynamic memory
-
-        void setId(int id);
-        int getId() const;    
+        static void messageHandlerTask(void *pvParameters);  // FreeRTOS-task för att hantera meddelanden
+        void handleMessage(uint32_t from, const char* msg);  // Metod för att hantera ett meddelande
+        void handlePositions(uint32_t from, int row, int column);
+        void handleHelpRequest(uint32_t from, int row, int column);
         void Tick(); 
         void searchForTarget();
         void moveToTarget();
@@ -69,22 +62,24 @@ class Firefighter
         void moveHazmat();
         void rescuePerson();
         void move(const Tile* destination);
-        bool ChangeState(Tile* tile);
         void Die(int row, int column);
         void addWalls();
         void wait();
-        void TeamArrived();
-        void startMission(int row, int column);
-        bool atDeadEnd(); 
-        bool checkForEvent(Tile* tile, Event event); 
+        void TeamArrived(); 
         void changeState();
-
-        // Helper function to allocate memory for grid
-        void initializeGrid();
-        void cleanupGrid();
-
-        void printGrid();
         void bfsTo(Tile* destination);
+        void startMessageHandler();  // Startar tasken
+        bool atDeadEnd(); 
+        bool checkForEvent(Tile* tile, Event event);
+        bool tryParseInt(const String& str, int& outValue);
+
+    public: 
+        Comms comms;
+        uint32_t leaderID;
+
+        Firefighter();
+        ~Firefighter(); 
+        void startMission(); 
 };
 
 #endif  // FIREFIGHTER_H_

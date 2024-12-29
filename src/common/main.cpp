@@ -4,7 +4,9 @@
 #include "hardware_config.h"
 
 // Definiera knapptryckningar i en array för skalbarhet
-Firefighter firefighter;
+//Firefighter firefighter;
+Firefighter* firefighter = new Firefighter();  // Skapar objektet på heapen
+
 
 const unsigned long DEBOUNCE_DELAY = 1000;
 bool buttonPressed[3] = {false, false, false};
@@ -32,10 +34,7 @@ void checkDebouncedButton(volatile bool& buttonRaw, unsigned long& lastDebounceT
 }
 
 void setup() 
-{
-  Serial.begin(115200);
-  Serial.setTimeout(50);
-  
+{ 
   // Init hardware, buttons and TFT display and LED
   hardwareInit();
   
@@ -56,7 +55,7 @@ void loop()
   {
     buttonPressed[0] = false;
     printToDisplay("No pressed");
-    firefighter.comms.meshPush("No", firefighter.leaderID);
+    firefighter->comms.meshPush("No", firefighter->leaderID);
     setLEDOff();
   }
 
@@ -64,14 +63,14 @@ void loop()
   {
     buttonPressed[1] = false;
     printToDisplay("Help requested");
-    firefighter.comms.meshPush("ReqPos", 0);
+    firefighter->comms.meshPush("ReqPos", 0);
   }
 
   if (buttonPressed[2]) 
   {
     buttonPressed[2] = false;
     printToDisplay("Yes pressed");
-    firefighter.startMission();
+    firefighter->startMission();
     setLEDOff();
   }  
 }

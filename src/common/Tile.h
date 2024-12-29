@@ -37,7 +37,7 @@ class Tile
         int getColumn() const;
         void addEvent(Event e);
         void removeEvent(Event e);
-        bool hasEvent(Event e);  
+        bool hasEvent(Event e) const;  
 };
 
 #endif

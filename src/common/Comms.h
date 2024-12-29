@@ -25,6 +25,7 @@ struct Message
 class Comms 
 {
 private:
+
     static painlessMesh mesh;
     static QueueHandle_t serialOutPutQueue;
     static QueueHandle_t meshOutputQueue;
@@ -37,6 +38,7 @@ private:
     static void incomingMessagesPush(uint32_t from, const String& msg);
 
 public:
+
     static void meshPush(const String& msg, uint32_t nodeid = 0);
     static void serialPush(const String& msg);
     static QueueHandle_t incomingMessages;

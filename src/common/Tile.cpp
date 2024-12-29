@@ -38,7 +38,7 @@
     {
         this->events &= ~static_cast<int>(e);
     }
-    bool Tile::hasEvent(Event e) 
+    bool Tile::hasEvent(Event e) const
     {
         return (events & static_cast<int>(e)) != 0;
     }

@@ -18,20 +18,22 @@ Message::Message() : to(0)
     msg[0] = '\0';
 }
 
-Comms::Comms()
+Comms::Comms() 
 {
+    Serial.println("Comms constructor: Initializing...");
+
     Serial.begin(115200);
     Serial.setTimeout(50);
     
     mesh.init(MESH_SSID, MESH_PASSWORD, MESH_PORT);
 
     mesh.onReceive([](uint32_t from, String& msg) {
-        meshPush(msg);
+        incomingMessagesPush(from, msg);
     });
 
-    serialOutPutQueue = xQueueCreate(100, sizeof(char[256]));
-    meshOutputQueue = xQueueCreate(100, sizeof(Message));
-    incomingMessages = xQueueCreate(100, sizeof(Message));
+    Comms::serialOutPutQueue = xQueueCreate(100, sizeof(char[256]));
+    Comms::meshOutputQueue = xQueueCreate(100, sizeof(Message));
+    Comms::incomingMessages = xQueueCreate(100, sizeof(Message));
 
     xTaskCreate(meshUpdate, "meshUpdate", 5000, NULL, 1, NULL);
     xTaskCreate(serialWriteTask, "serialWriteTask", 5000, NULL, 1, NULL);

@@ -1,6 +1,10 @@
-#include "namedMesh.h"
+#include <Arduino.h>
 #include "Firefighter.h"
 #include <cmath>
+#include <unordered_map>
+#include <string>
+//#include "hardware_config.h"
+#include "painlessMesh.h"
 #include "hardware_config.h"
 
 using namespace std;
@@ -10,69 +14,119 @@ using namespace std;
 #define   MESH_PORT       5555
 
 Firefighter firefighter;
-String bridgeNAme = "bridge"; // namnet på brygga-noden
-String nodeName; // namnet på noden
-namedMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
-std::map<String, std::pair<int, int>> contactList;  // Map of node IDs to their positions
+uint32_t bridgeName = 533097877; // namnet på brygga-noden
+painlessMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
+int missionTargetRow = 0;
+int missionTargetColumn = 0;
+int positionListCounter = 0;
 
-volatile bool button1Pressed = false;
-volatile bool button2Pressed = false;
-volatile bool button3Pressed = false;
+const unsigned long DEBOUNCE_DELAY = 1000; // Debounce delay in milliseconds
 
-void IRAM_ATTR handleButton1() {
-    printToDisplay("Button 1 pressed");  // Test för att se att knapptryckning fungerar
-    button1Pressed = !button1Pressed;
+bool noButtonPressed = false;
+bool helpButtonPressed = false;
+bool yesButtonPressed = false;
 
-}
-void IRAM_ATTR handleButton2() {
-    printToDisplay("Button 2 pressed");  // Test för att se att knapptryckning fungerar
-    button2Pressed = !button2Pressed;
-}
-void IRAM_ATTR handleButton3() {
-    printToDisplay("Button 3 pressed");  // Test för att se att knapptryckning fungerar
-    button3Pressed = !button3Pressed;
+unsigned long lastDebounceTime1 = 0;
+unsigned long lastDebounceTime2 = 0;
+unsigned long lastDebounceTime3 = 0;
+
+volatile bool noButtonRaw = false;
+volatile bool helpButtonRaw = false;
+volatile bool yesButtonRaw = false;
+
+void IRAM_ATTR NoButton() { noButtonRaw = true; }
+void IRAM_ATTR HelpButton() { helpButtonRaw = true; }
+void IRAM_ATTR YesButton() { yesButtonRaw = true; }
+
+void checkDebouncedButton(volatile bool& buttonRaw, unsigned long& lastDebounceTime, bool& buttonPressed) 
+{
+  if (buttonRaw) 
+  {
+    unsigned long currentTime = millis();
+    if (currentTime - lastDebounceTime > DEBOUNCE_DELAY) 
+    {
+      buttonPressed = true;
+      lastDebounceTime = currentTime;
+    }
+    buttonRaw = false;
+  }
 }
 
 void informBridge(void *pvParameters);  //dek av freertos task funktion som peeriodiskt uppdaterar gui med egenägd info
+void informSingleNode(void *pvParameters);
 void meshUpdate(void *pvParameters);  //skit i denna, till för pinlessmesh,  freertos task funktion som uppdaterar meshen
+void informAllNodes(void *pvParameters);
 
-std::vector<std::string> tokenize(const std::string& expression) {
-    std::vector<std::string> tokens;
-    std::string token;
+std::vector<String> tokenize(const String& expression) 
+{
+    std::vector<String> tokens;
+    String token;
 
-    for (char c : expression) {
+    for (int i = 0; i < expression.length(); ++i) {
+        char c = expression[i];
         if (c == ' ') {
-            if (!token.empty()) {
+            if (!token.isEmpty()) {
                 tokens.push_back(token);
-                token.clear();
+                token = ""; 
             }
         } else {
             token += c;
         }
     }
-    if (!token.empty()) {
+    if (!token.isEmpty()) {
         tokens.push_back(token);
     }
     return tokens;
 }
 
-bool tryParseInt(const std::string& str) 
+bool tryParseInt(const String& str, int& outValue) 
 {
-    try 
-    {
-        size_t pos;
-        std::stoi(str, &pos);
+    char* endPtr;
+    long value = strtol(str.c_str(), &endPtr, 10); // Försök att konvertera strängen
 
-        return pos == str.length();
+    if (*endPtr == '\0') { // Kontrollera att hela strängen är ett giltigt tal
+        outValue = static_cast<int>(value);
+
+        // Kontrollera att värdet ligger inom intervallet för int
+        if (value >= INT_MIN && value <= INT_MAX) {
+            return true;
+        }
     }
-    catch (std::invalid_argument&) 
+    return false; // Parsning misslyckades
+}
+
+void handlePositions(uint32_t from, int row, int column)
+{  
+  float dis = std::sqrt(std::pow(row-firefighter.grid.targetTile->getRow(),2)+std::pow(column-firefighter.grid.targetTile->getColumn(),2));
+  firefighter.positionsList.push_back({from, dis}); // Spara nodens position i positionsList
+  if (firefighter.positionsList.size() == mesh.getNodeList(false).size()-2) //Check if all nodes anwsered, if true, start sorting
+  { 
+    std::sort(firefighter.positionsList.begin(), firefighter.positionsList.end(),
+    [](const std::pair<uint32_t, float>& a, const std::pair<uint32_t, float>& b) 
     {
-        return false; // Strängen kunde inte tolkas som ett tal
-    }
-    catch (std::out_of_range&) 
+      return a.second < b.second; // Compare by distance
+    });
+    
+    positionListCounter = 0;
+    
+    for (positionListCounter; positionListCounter < 1; positionListCounter++) 
     {
-        return false; // Strängen representerar ett tal utanför int:s intervall
+      printToDisplay("Called firefighter: " + String(firefighter.positionsList[positionListCounter].first) + " with distance: " + String(firefighter.positionsList[positionListCounter].second));
+      mesh.sendSingle(firefighter.positionsList[positionListCounter].first, "Help " + String(firefighter.grid.targetTile->getRow()) + " " + String(firefighter.grid.targetTile->getColumn()));
     }
+  }
+}
+
+void handleHelpRequest(uint32_t from, int row, int column)
+{
+  // TODO: spara id på avsändare.
+  firefighter.leaderID = from;  // Spara id på avsändare
+  setLEDColor(0, 0, 255);  // Blå hjälpfärg
+  printToDisplay("Help request recieved");
+  missionTargetRow = row;
+  missionTargetColumn = column;
+  firefighter.tickCounter = 0;
+  firefighter.pendingHelp = true;
 }
 
 void setup() 
@@ -84,168 +138,247 @@ void setup()
   hardwareInit();
 
   // Attach interrupts to the button pins
-  attachInterrupt(digitalPinToInterrupt(BUTTON_1), handleButton1, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_2), handleButton2, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_3), handleButton3, FALLING);
-
+  attachInterrupt(digitalPinToInterrupt(BUTTON_1), NoButton, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_2), HelpButton, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_3), YesButton, FALLING);
 
   //mesh.setDebugMsgTypes(ERROR | CONNECTION);
   mesh.init(MESH_SSID, MESH_PASSWORD, MESH_PORT);  // Starta meshen
 
-  nodeName = String(mesh.getNodeId());  //namnet kan modifieras mes.getNodeId() är alltid unikt
-  mesh.setName(nodeName);
+  mesh.onReceive([](uint32_t from, String &msg) 
+  {
+    printToDisplay("Recieved: " + msg);
 
-  mesh.onReceive([](String &from, String &msg) {
-    Serial.println(msg.c_str());
-    
-    if (from == bridgeNAme) {
-      std::vector<std::string> tokens = tokenize(msg.c_str());
-      if (tokens[0] == "Tick") {
-        // firefighter.printGrid();
-        firefighter.Tick();
-        printToDisplay("Tick\n");
-      }
-      else if (tokens.size() == 3) {
-        if (tryParseInt(tokens[1]) && tryParseInt(tokens[2])) {
-          size_t row = 0;
-          size_t column = 0;
-          row = std::stoi(tokens[1]);
-          column = std::stoi(tokens[2]);
-          
-          if (tokens[0] == "Fire")
-          {
-            firefighter.grid[row][column]->addEvent(Event::FIRE);
-          }
-          else if (tokens[0] == "Smoke")
-          {
-            firefighter.grid[row][column]->addEvent(Event::SMOKE);
-          }
-          else if (tokens[0] == "Victim")
-          {
-            firefighter.grid[row][column]->addEvent(Event::VICTIM);
-          }
-          else if (tokens[0] == "Hazmat")
-          {
-            firefighter.grid[row][column]->addEvent(Event::HAZMAT);
-          }  
-        }        
-      } 
-      else if (tokens.size() == 4 && tokens[1] == "dead")
-      {
-        if (tryParseInt(tokens[2]) && tryParseInt(tokens[3])) {
-          size_t row;
-          size_t column;
-          std::stoi(tokens[2], &row);
-          std::stoi(tokens[3], &column);
-          if (tokens[0] == "Firefighter" && firefighter.currentTile->getRow() == row && firefighter.currentTile->getColumn() == column) {
-            firefighter.Die();
-          } 
-          else if (tokens[0] == "Victim")
-          {
-            firefighter.grid[row][column]->removeEvent(Event::VICTIM);
-          }         
+    int row = 0;
+    int column = 0;
+    std::vector<String> tokens = tokenize(msg);
+
+    if (from == bridgeName)
+    {
+      if (tokens[0] == "Tick") { firefighter.Tick(); }
+
+      else if (tokens.size() == 3 && tryParseInt(tokens[1], row) && tryParseInt(tokens[2], column)) 
+      {      
+        if (tokens[0] == "Fire")
+        {
+          firefighter.grid.getTile(row, column)->addEvent(Event::FIRE);
         }
-      }
+        else if (tokens[0] == "Smoke")
+        {
+          firefighter.grid.getTile(row, column)->addEvent(Event::SMOKE);
+        }
+        else if (tokens[0] == "Victim")
+        {
+          firefighter.grid.getTile(row, column)->addEvent(Event::VICTIM);
+        }
+        else if (tokens[0] == "Hazmat")
+        {
+          firefighter.grid.getTile(row, column)->addEvent(Event::HAZMAT);
+        } 
+        else if (tokens[0] == "RemoveVictim")
+        {
+          firefighter.grid.getTile(row, column)->removeEvent(Event::VICTIM);
+        }
+        else if (tokens[0] == "MaybeDie")
+        {
+          firefighter.Die(row, column);
+        }                
+      } 
     }
-    else if (from == "fireFighter") {  // TODO: Tror denna borde vara else, eftersom den skickas från brandmannens id, ex: "4687513249" om inte namnet är till just fireFighter hos alla
-      std::vector<std::string> tokens = tokenize(msg.c_str());
-      // Mellan noderna kan jag inte er formattering
-      // TODO: Nodernas meddelanden, formatering = samma som brygga ~ish
-      // Här under onReceive hanterar vi de olika sorternas meddelande som mottages från andra brandmän
-      // en exempelfunktion som tar emot positonerna och lägger dem i listan = contactList
-      if (tokens[0] == "Pos") {  // TODO: kontrollera att tokenize är använt rätt!
-        contactList[from] = std::make_pair(std::stoi(tokens[1]), std::stoi(tokens[2]));
-        //Serial.println("Node %s is at position (%d, %d)\n", from.c_str(), std::stoi(tokens[1]), std::stoi(tokens[2]));  // Debug
+    else if (tokens.size() == 3 && tryParseInt(tokens[1], row) && tryParseInt(tokens[2], column)) 
+    {
+      if (tokens[0] == "Pos")
+      {
+        handlePositions(from, row, column);
       }
-      if (tokens[0] == "ReqPos") {
-        mesh.sendSingle(from, "Pos " + String(firefighter.currentTile->getRow()) + " " + String(firefighter.currentTile->getColumn()));
+      else if (tokens[0] == "Help") 
+      {
+        handleHelpRequest(from, row, column);
+        
       }
-      if (tokens[0] == "Help") {
-        // TODO: kolla om knapp ja eller nej är tryckt
-        setLEDColor(0, 255, 0);  // Grön
-        printToDisplay("Help request recieved");
+      else if (tokens[0] == "RemoveHazmat")
+      {
+        firefighter.grid.getTile(row, column)->removeEvent(Event::HAZMAT);
       }
+      else if (tokens[0] == "RemoveVictim")
+      {
+        firefighter.grid.getTile(row, column)->removeEvent(Event::VICTIM);
+      }
+      else if (tokens[0] == "Hazmat")
+      {
+        firefighter.grid.getTile(row, column)->addEvent(Event::HAZMAT);
+      } 
+    }     
+    else 
+    {
+      if (tokens[0] == "ReqPos") 
+      {
+        mesh.sendSingle(from, "Pos " + String(firefighter.grid.currentTile->getRow()) + " " + String(firefighter.grid.currentTile->getColumn()));
+      }
+      else if (tokens[0] == "Yes") 
+      { 
+        printToDisplay("Yes recieved");       
+        firefighter.teamMembers.push_back(from);
+      }
+      else if (tokens[0] == "No") 
+      { 
+        printToDisplay("No recieved");
+        for (int i = 0; i < firefighter.teamMembers.size(); i++) {
+            if (firefighter.positionsList[positionListCounter].first == firefighter.teamMembers[i]) {
+              i = 0;
+              positionListCounter = (positionListCounter + 1) % firefighter.positionsList.size();
+            }
+        }
+        mesh.sendSingle(firefighter.positionsList[positionListCounter].first, "Help " + String(firefighter.grid.targetTile->getRow()) + " " + String(firefighter.grid.targetTile->getColumn()));
+        positionListCounter = (positionListCounter + 1) % firefighter.positionsList.size();
+      }
+      else if (tokens[0] == "Arrived")
+      {
+        firefighter.nbrFirefighters++;
+      }
+      else if (tokens[0] == "TeamArrived")
+      {
+        firefighter.TeamArrived();
+      } 
     }
   });
 
   mesh.onChangedConnections([]() {
-    //Serial.printf("Connection table changed\n");
     printToDisplay("Connection table changed");
   });
 
   //skapa tasks
   xTaskCreate(meshUpdate, "meshUpdate", 10000, NULL, 1, NULL);
-  xTaskCreate(informBridge, "informBridge", 10000, NULL, 1, NULL); 
-
+  xTaskCreate(informBridge, "informBridge", 5000, NULL, 1, NULL); 
+  xTaskCreate(informSingleNode, "informFirefighters", 5000, NULL, 1, NULL);
+  xTaskCreate(informAllNodes, "informAll", 5000, NULL, 1, NULL);
 }
 
 // This function is called when a new node connects
 void newConnectionCallback(uint32_t nodeId) 
 {
-    //Serial.printf("New Connection, nodeId = %u\n", nodeId);
-
-    // Send this node's position to the new connection
-    String posMsg = "Pos:" + String(firefighter.currentTile->getRow()) + "," + String(firefighter.currentTile->getColumn());
-    mesh.sendSingle(nodeId, posMsg);
+    String PositionMsg = "Position:" + String(firefighter.grid.currentTile->getRow()) + "," + String(firefighter.grid.currentTile->getColumn());
+    mesh.sendSingle(nodeId, PositionMsg);
 }
 
-void informBridge(void *pvParameters) {
-  while (1) {
-     if (!firefighter.messagesToBridge.empty()) {
+void informBridge(void *pvParameters) 
+{
+  while (1) 
+  {
+     if (!firefighter.messagesToBridge.empty()) 
+     {
       String msg = firefighter.messagesToBridge.front();
-      Serial.println(msg);
+      printToDisplay("Sent to bridge: " + msg);
 
-      if (!mesh.sendSingle(bridgeNAme, msg)) {
-        //Serial.println("Message send failed!");
+      if (!mesh.sendSingle(bridgeName, msg)) 
+      {
+        printToDisplay("Failed to send message: " + msg);
       }
       firefighter.messagesToBridge.pop();
     }    
     vTaskDelay(500 / portTICK_PERIOD_MS);
   }
 }
-/*
-// Task that sends a message to the bridge every second
-QueueHandle_t xQueue;  // Flytta upp till globala variabler
-// Create a queue capable of containing 10 strings
-xQueue = xQueueCreate(10, sizeof(String));
-if (xQueue == NULL) {
-  Serial.println("Failed to create queue");
-}  // Flytta upp till setup
-xTaskCreate(sendMessagesTask, "sendMessagesTask", 10000, NULL, 1, NULL);  // Flytta upp till setup
-void sendMessagesTask(void *pvParameters) {
-  while (1) {
-    if (xQueueReceive(xQueue, &msg, portMAX_DELAY) == pdPASS) {
-      if (!mesh.sendSingle(bridgeNAme, msg)) {
-        Serial.println("Message send failed!");
-      }
-    }
-    vTaskDelay(1000 / portTICK_PERIOD_MS);  // TODO: Kan vara onödgt att ha delay på tasks ! Undersöker
+
+void informSingleNode(void *pvParameters)
+{
+  while (1) 
+  {
+     if (!firefighter.messagesToNode.empty()) 
+     {      
+      std::pair<uint32_t, String> msg = firefighter.messagesToNode.front();
+      if (!mesh.sendSingle(msg.first, msg.second)) {
+        printToDisplay("Failed to send message: " + msg.second);
+      }      
+      firefighter.messagesToNode.pop();
+    }    
+    vTaskDelay(500 / portTICK_PERIOD_MS);
   }
 }
-*/
+
+void informAllNodes(void *pvParameters) {
+  while (1) {
+    if (!firefighter.messagesToBroadcast.empty()) 
+    {
+      String msg = firefighter.messagesToBroadcast.front();
+
+      for (auto node : mesh.getNodeList())
+      {
+        if (node != bridgeName)
+        {
+          if (!mesh.sendSingle(node, msg)) 
+          {
+          printToDisplay("Failed to send message: " + msg);
+          }
+        }   
+      }
+      firefighter.messagesToBroadcast.pop();
+    } 
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+  }   
+}
+
 // This function is called when a node disconnects
 void lostConnectionCallback(uint32_t nodeId) 
 {
-    Serial.printf("Lost Connection, nodeId = %u\n", nodeId);
+  Serial.printf("Lost Connection, nodeId = %u\n", nodeId);
+  // Hitta noden i positionsList
+  auto it = std::find_if(firefighter.positionsList.begin(), firefighter.positionsList.end(),
+                          [nodeId](const std::pair<uint32_t, float>& entry) {
+                              return entry.first == nodeId; // Matcha nodeId
+                          });
 
-    // Remove the disconnected node from the position map
-    if (contactList.erase(String(nodeId))) 
-    {
-        Serial.printf("Node %u removed from position map\n", nodeId);
-    } else 
-    {
-        Serial.printf("Node %u was not in the position map\n", nodeId);
-    }
+  // Om noden hittades, ta bort den
+  if (it != firefighter.positionsList.end()) 
+  {
+    firefighter.positionsList.erase(it);
+    Serial.printf("Node %u removed from position list\n", nodeId);
+  } 
+  else 
+  {
+    Serial.printf("Node %u was not in the position list\n", nodeId);
+  }
 }
+
 
 void meshUpdate(void *pvParameters) 
 {
-    while(1)
-     {
-        mesh.update();
-        vTaskDelay(50 / portTICK_PERIOD_MS);
-    }
+  while(1)
+  {
+    mesh.update();
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+  }
 }
 
 // inget görs här, aktiviteter sköts i freeRTOS tasks
-void loop() {}
+void loop() 
+{
+  checkDebouncedButton(noButtonRaw, lastDebounceTime1, noButtonPressed);
+  checkDebouncedButton(helpButtonRaw, lastDebounceTime2, helpButtonPressed);
+  checkDebouncedButton(yesButtonRaw, lastDebounceTime3, yesButtonPressed);
+
+  if (noButtonPressed)
+  {
+    noButtonPressed = false;
+    printToDisplay("No pressed");
+    mesh.sendSingle(firefighter.leaderID, "No");
+    setLEDOff();
+  }
+
+  if (helpButtonPressed) 
+  {
+    helpButtonPressed = false;
+    printToDisplay("Help requested");
+    firefighter.positionsList.clear();  // Rensa listan över positioner
+    firefighter.messagesToBroadcast.push("ReqPos");  // Skicka förfrågan om position till alla noder  
+  }
+
+  if (yesButtonPressed) 
+  {
+    yesButtonPressed = false;
+    printToDisplay("Yes pressed");
+    mesh.sendSingle(firefighter.leaderID, "Yes");
+    firefighter.startMission(missionTargetRow, missionTargetColumn);
+    setLEDOff(); 
+  }  
+}

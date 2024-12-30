@@ -1,5 +1,5 @@
-#ifndef HARDWARE_CONFIG_H
-#define HARDWARE_CONFIG_H
+#ifndef HARDWARE_CONFIG_H_
+#define HARDWARE_CONFIG_H_
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
@@ -19,5 +19,6 @@ void printToDisplay(String message);
 void printToDisplay(const String& message, int x, int y);
 void clearDisplay();
 void setLEDColor(uint8_t r, uint8_t g, uint8_t b);
+void setLEDOff();
 
 #endif // HARDWARE_CONFIG_H

@@ -1,7 +1,8 @@
 #ifndef FIREFIGHTER_H_
 #define FIREFIGHTER_H_
 
-#include "Tile.h"
+//#include "Tile.h"
+#include "Grid.h"
 #include <array>
 #include <random>
 #include <queue>
@@ -33,15 +34,16 @@ class Firefighter
         std::uniform_int_distribution<> dist;
         int id;
         State state; 
-        Tile* lastTile;     
-        Tile* exitTile; 
+        //Tile* lastTile;     
+        //Tile* exitTile; 
         bool teamArrived;
 
     public:
         // Grid of pointers to Tile objects
-        Tile* grid[6][8]; // Dynamically allocated grid of pointers
-        Tile* currentTile;
-        Tile* targetTile; 
+        //Tile* grid[6][8]; // Dynamically allocated grid of pointers
+        //Tile* currentTile;
+        //Tile* targetTile; 
+        Grid grid; 
         bool hasMission;
         int nbrFirefighters;
         uint32_t leaderID; 
@@ -71,12 +73,12 @@ class Firefighter
         void move(const Tile* destination);
         bool ChangeState(Tile* tile);
         void Die(int row, int column);
-        void addWalls();
+        //void addWalls();
         void wait();
         void TeamArrived();
         void startMission(int row, int column);
-        bool atDeadEnd(); 
-        bool checkForEvent(Tile* tile, Event event); 
+        //bool atDeadEnd(); 
+        //bool checkForEvent(Tile* tile, Event event); 
         void changeState();
 
         // Helper function to allocate memory for grid
@@ -84,7 +86,7 @@ class Firefighter
         void cleanupGrid();
 
         void printGrid();
-        void bfsTo(Tile* destination);
+        //void bfsTo(Tile* destination);
 };
 
 #endif  // FIREFIGHTER_H_

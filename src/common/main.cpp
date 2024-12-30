@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include "Tile.h"
 #include "Firefighter.h"
 #include <array>
 #include <iostream>
@@ -19,7 +18,7 @@ using namespace std;
 #define   MESH_PORT       5555
 
 Firefighter firefighter;
-uint32_t bridgeName = 244620401; // namnet på brygga-noden
+uint32_t bridgeName = 533097877; // namnet på brygga-noden
 painlessMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
 int missionTargetRow = 0;
 int missionTargetColumn = 0;
@@ -102,7 +101,7 @@ bool tryParseInt(const String& str, int& outValue)
 
 void handlePositions(uint32_t from, int row, int column)
 {  
-  float dis = std::sqrt(std::pow(row-firefighter.targetTile->getRow(),2)+std::pow(column-firefighter.targetTile->getColumn(),2));
+  float dis = std::sqrt(std::pow(row-firefighter.grid.targetTile->getRow(),2)+std::pow(column-firefighter.grid.targetTile->getColumn(),2));
   firefighter.positionsList.push_back({from, dis}); // Spara nodens position i positionsList
   if (firefighter.positionsList.size() == mesh.getNodeList(false).size()-2) //Check if all nodes anwsered, if true, start sorting
   { 
@@ -117,7 +116,7 @@ void handlePositions(uint32_t from, int row, int column)
     for (positionListCounter; positionListCounter < 1; positionListCounter++) 
     {
       printToDisplay("Called firefighter: " + String(firefighter.positionsList[positionListCounter].first) + " with distance: " + String(firefighter.positionsList[positionListCounter].second));
-      mesh.sendSingle(firefighter.positionsList[positionListCounter].first, "Help " + String(firefighter.targetTile->getRow()) + " " + String(firefighter.targetTile->getColumn()));
+      mesh.sendSingle(firefighter.positionsList[positionListCounter].first, "Help " + String(firefighter.grid.targetTile->getRow()) + " " + String(firefighter.grid.targetTile->getColumn()));
     }
   }
 }
@@ -166,23 +165,23 @@ void setup()
       {      
         if (tokens[0] == "Fire")
         {
-          firefighter.grid[row][column]->addEvent(Event::FIRE);
+          firefighter.grid.getTile(row, column)->addEvent(Event::FIRE);
         }
         else if (tokens[0] == "Smoke")
         {
-          firefighter.grid[row][column]->addEvent(Event::SMOKE);
+          firefighter.grid.getTile(row, column)->addEvent(Event::SMOKE);
         }
         else if (tokens[0] == "Victim")
         {
-          firefighter.grid[row][column]->addEvent(Event::VICTIM);
+          firefighter.grid.getTile(row, column)->addEvent(Event::VICTIM);
         }
         else if (tokens[0] == "Hazmat")
         {
-          firefighter.grid[row][column]->addEvent(Event::HAZMAT);
+          firefighter.grid.getTile(row, column)->addEvent(Event::HAZMAT);
         } 
         else if (tokens[0] == "RemoveVictim")
         {
-          firefighter.grid[row][column]->removeEvent(Event::VICTIM);
+          firefighter.grid.getTile(row, column)->removeEvent(Event::VICTIM);
         }
         else if (tokens[0] == "MaybeDie")
         {
@@ -203,22 +202,22 @@ void setup()
       }
       else if (tokens[0] == "RemoveHazmat")
       {
-        firefighter.grid[row][column]->removeEvent(Event::HAZMAT);
+        firefighter.grid.getTile(row, column)->removeEvent(Event::HAZMAT);
       }
       else if (tokens[0] == "RemoveVictim")
       {
-        firefighter.grid[row][column]->removeEvent(Event::VICTIM);
+        firefighter.grid.getTile(row, column)->removeEvent(Event::VICTIM);
       }
       else if (tokens[0] == "Hazmat")
       {
-        firefighter.grid[row][column]->addEvent(Event::HAZMAT);
+        firefighter.grid.getTile(row, column)->addEvent(Event::HAZMAT);
       } 
     }     
     else 
     {
       if (tokens[0] == "ReqPos") 
       {
-        mesh.sendSingle(from, "Pos " + String(firefighter.currentTile->getRow()) + " " + String(firefighter.currentTile->getColumn()));
+        mesh.sendSingle(from, "Pos " + String(firefighter.grid.currentTile->getRow()) + " " + String(firefighter.grid.currentTile->getColumn()));
       }
       else if (tokens[0] == "Yes") 
       { 
@@ -234,7 +233,7 @@ void setup()
               positionListCounter = (positionListCounter + 1) % firefighter.positionsList.size();
             }
         }
-        mesh.sendSingle(firefighter.positionsList[positionListCounter].first, "Help " + String(firefighter.targetTile->getRow()) + " " + String(firefighter.targetTile->getColumn()));
+        mesh.sendSingle(firefighter.positionsList[positionListCounter].first, "Help " + String(firefighter.grid.targetTile->getRow()) + " " + String(firefighter.grid.targetTile->getColumn()));
         positionListCounter = (positionListCounter + 1) % firefighter.positionsList.size();
       }
       else if (tokens[0] == "Arrived")
@@ -262,7 +261,7 @@ void setup()
 // This function is called when a new node connects
 void newConnectionCallback(uint32_t nodeId) 
 {
-    String PositionMsg = "Position:" + String(firefighter.currentTile->getRow()) + "," + String(firefighter.currentTile->getColumn());
+    String PositionMsg = "Position:" + String(firefighter.grid.currentTile->getRow()) + "," + String(firefighter.grid.currentTile->getColumn());
     mesh.sendSingle(nodeId, PositionMsg);
 }
 

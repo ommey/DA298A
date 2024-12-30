@@ -3,25 +3,25 @@
 Firefighter::Firefighter() : gen(esp_random()), dist(1, 4) // TODO: testar annan seed för random og="rd"
 {
     // Allokera minne för varje Tile och spara pekarna i grid
-    for (int row = 0; row < 6; ++row)
+   /* for (int row = 0; row < 6; ++row)
     {
         for (int col = 0; col < 8; ++col)
         {
             grid[row][col] = new Tile(row, col);
         }
-    }
+    }*/
 
     this->id = 0;
-    this->currentTile = grid[3][3];  // Pekar på första tile
-    this->lastTile = grid[3][3];
-    this->targetTile = grid[0][0];
-    this->exitTile = grid[0][0]; 
-    this->hasMission = false;
-    this->nbrFirefighters = 1;
+    //this->currentTile = grid[3][3];  // Pekar på första tile
+    //this->lastTile = grid[3][3];
+    //this->targetTile = grid[0][0];
+    //this->exitTile = grid[0][0]; 
+    //this->hasMission = false;
+    //this->nbrFirefighters = 1;
 
     changeState();
     
-    addWalls();
+    //addWalls();
 }
 
 void Firefighter::setId(int id)
@@ -34,7 +34,7 @@ int Firefighter::getId() const
     return id;
 }    
 
-void Firefighter::bfsTo(Tile* destination)
+/*void Firefighter::bfsTo(Tile* destination)
 {
     if (currentTile == destination) return;  // Om vi redan är vid målet, gör ingenting.
 
@@ -105,19 +105,19 @@ void Firefighter::bfsTo(Tile* destination)
         }
         std::reverse(pathToTarget.begin(), pathToTarget.end());  // Vänd vägen så att den går från start → mål.
     }
-}
+}*/
 
 
 void Firefighter::move(const Tile* destination)
 {  
-    lastTile = currentTile;
-    currentTile = grid[destination->getRow()][destination->getColumn()];
-    String msg = "Firefighter from " + String(lastTile->getRow()) + " " + String(lastTile->getColumn()) + " to " + currentTile->getRow() + " " + currentTile->getColumn();
+    grid.lastTile = grid.currentTile;
+    grid.currentTile = grid.getTile(destination->getRow(), destination->getColumn());
+    String msg = "Firefighter from " + String(grid.lastTile->getRow()) + " " + String(grid.lastTile->getColumn()) + " to " + grid.currentTile->getRow() + " " + grid.currentTile->getColumn();
     messagesToBridge.push(msg);
 }
 
 
-bool Firefighter::checkForEvent(Tile* tile, Event event)
+/*bool Firefighter::checkForEvent(Tile* tile, Event event)
 { 
     bool hasEvent = false;
 
@@ -148,7 +148,7 @@ bool Firefighter::checkForEvent(Tile* tile, Event event)
     }
 
   return hasEvent;
-}
+}*/
 
 void Firefighter::changeState()
 {
@@ -158,27 +158,27 @@ void Firefighter::changeState()
       //printToDisplay("Goes to target");
       state = State::MOVING_TO_TARGET;
     }
-    else if (checkForEvent(currentTile, Event::VICTIM))
+    else if (grid.checkForEvent(Event::VICTIM))
     {
       //Serial.printf("Goes to picking up person\n");
       //printToDisplay("Goes to picking up person");
-      String msg = "RemoveVictim " + String(targetTile->getRow()) + " " + String(targetTile->getColumn());
+      String msg = "RemoveVictim " + String(grid.targetTile->getRow()) + " " + String(grid.targetTile->getColumn());
       messagesToBroadcast.push(msg);
       state = State::MOVING_TO_TARGET; 
     }
-    else if (checkForEvent(currentTile, Event::FIRE)) 
+    else if (grid.checkForEvent(Event::FIRE)) 
     {
       //Serial.printf("Goes to putting out fire\n");
       //printToDisplay("Goes to putting out fire");
       state = State::PUTTING_OUT_FIRE;
     } 
-    else if (checkForEvent(currentTile, Event::SMOKE))
+    else if (grid.checkForEvent(Event::SMOKE))
     {
       //Serial.printf("Goes to putting out smoke\n");
       //printToDisplay("Goes to putting out smoke");
       state = State::PUTTING_OUT_SMOKE;
     } 
-    else if (checkForEvent(currentTile, Event::HAZMAT))
+    else if (grid.checkForEvent(Event::HAZMAT))
     {
       //Serial.printf("Goes to picking up material\n");
       //printToDisplay("Goes to picking up material");
@@ -192,7 +192,7 @@ void Firefighter::changeState()
     }
 }
 
-bool Firefighter::atDeadEnd()
+/*bool Firefighter::atDeadEnd()
 {
     int walls = 0;
 
@@ -217,52 +217,30 @@ bool Firefighter::atDeadEnd()
         return true;
     } 
     return false;
-}
+}*/
 
 void Firefighter::searchForTarget()
 {
     //Serial.println("Target tile i search: " + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
 
-    if (atDeadEnd())
+    if (grid.atDeadEnd())
     {   
-        String msg = "Firefighter from " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()) + " to " + lastTile->getRow() + " " + lastTile->getColumn();
+        String msg = "Firefighter from " + String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn()) + " to " + grid.lastTile->getRow() + " " + grid.lastTile->getColumn();
         messagesToBridge.push(msg);
-        int last_row = currentTile->getRow();
-        int last_col = currentTile->getColumn();
-        currentTile = lastTile;   
-        lastTile = grid[last_row][last_col];
+        int last_row = grid.currentTile->getRow();
+        int last_col = grid.currentTile->getColumn();
+        grid.currentTile = grid.lastTile;   
+        grid.lastTile = grid.getTile(last_row, last_col);
     }
     else 
     {
         while(true)
         {
             int direction = dist(gen);
-            if (direction == 1 && !currentTile->hasWall(Wall::NORTH) && currentTile->getRow() > 0 
-            && !grid[currentTile->getRow() - 1][currentTile->getColumn()]->hasEvent(Event::FIRE) 
-            && grid[currentTile->getRow() - 1][currentTile->getColumn()] != lastTile)
+            Tile* nextTile = nullptr;
+            if (grid.getNextTile(direction, nextTile))
             {
-                move(grid[currentTile->getRow() - 1][currentTile->getColumn()]);
-                break;
-            }
-            else if (direction == 2 && !currentTile->hasWall(Wall::EAST) && currentTile->getColumn() < 7
-            && !grid[currentTile->getRow()][currentTile->getColumn() + 1]->hasEvent(Event::FIRE)
-            && grid[currentTile->getRow()][currentTile->getColumn() + 1] != lastTile)
-            {
-                move(grid[currentTile->getRow()][currentTile->getColumn() + 1]);
-                break;
-            }
-            else if (direction == 3 && !currentTile->hasWall(Wall::SOUTH) 
-            && currentTile->getRow() < 5 && !grid[currentTile->getRow() + 1][currentTile->getColumn()]->hasEvent(Event::FIRE)
-            && grid[currentTile->getRow() + 1][currentTile->getColumn()] != lastTile)
-            {
-                move(grid[currentTile->getRow() + 1][currentTile->getColumn()]);
-                break;
-            }
-            else if (direction == 4 && !currentTile->hasWall(Wall::WEST) && currentTile->getColumn() > 0 
-            && !grid[currentTile->getRow()][currentTile->getColumn() - 1]->hasEvent(Event::FIRE)
-            && grid[currentTile->getRow()][currentTile->getColumn() - 1] != lastTile)
-            {
-                move(grid[currentTile->getRow()][currentTile->getColumn() - 1]);
+                move(nextTile);
                 break;
             }
         }
@@ -272,11 +250,11 @@ void Firefighter::searchForTarget()
 
 void Firefighter::moveToTarget()
 {
-    if (currentTile != targetTile && pathToTarget.empty())
+    if (grid.currentTile != grid.targetTile && pathToTarget.empty())
     {
-        bfsTo(targetTile);
+        grid.bfsTo(grid.targetTile);
     }
-    if (currentTile == targetTile)    
+    if (grid.currentTile == grid.targetTile)    
     {         
         messagesToNode.push(std::make_pair(leaderID, "Arrived"));
         setLEDColor(255,0,0);
@@ -291,10 +269,10 @@ void Firefighter::extinguishFire()
 {
     //Serial.println("Target tile i extinguish fire:" + String(targetTile->getRow()) + " " + String(targetTile->getColumn()) + "\n");
 
-    targetTile->removeEvent(Event::FIRE);
-    targetTile->addEvent(Event::SMOKE);
+    grid.targetTile->removeEvent(Event::FIRE);
+    grid.targetTile->addEvent(Event::SMOKE);
     changeState();
-    String msg = "Fire putout " + String(targetTile->getRow()) + " " + String(targetTile->getColumn());
+    String msg = "Fire putout " + String(grid.targetTile->getRow()) + " " + String(grid.targetTile->getColumn());
     messagesToBridge.push(msg);
     messagesToBroadcast.push(msg);
 }
@@ -302,9 +280,9 @@ void Firefighter::extinguishFire()
 void Firefighter::extinguishSmoke()
 {
     //Serial.println("Target tile i extinguish smoke:" + String(targetTile->getRow()) + " " + String(targetTile->getColumn()) + "\n");
-    targetTile->removeEvent(Event::SMOKE);
+    grid.targetTile->removeEvent(Event::SMOKE);
     changeState();
-    String msg = "Smoke putout " + String(targetTile->getRow()) + " " + String(targetTile->getColumn());
+    String msg = "Smoke putout " + String(grid.targetTile->getRow()) + " " + String(grid.targetTile->getColumn());
     messagesToBridge.push(msg);
     messagesToBroadcast.push(msg);
 }
@@ -312,54 +290,54 @@ void Firefighter::extinguishSmoke()
 void Firefighter::moveHazmat()
 {
     // Om brandmannen är vid exitTile med HAZMAT-materialet
-    if (currentTile->hasEvent(Event::HAZMAT) && currentTile == exitTile)
+    if (grid.currentTile->hasEvent(Event::HAZMAT) && grid.currentTile == grid.exitTile)
     {
-        currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT från rutan.
-        messagesToBridge.push("Hazmat saved " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()));
+        grid.currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT från rutan.
+        messagesToBridge.push("Hazmat saved " + String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn()));
         changeState();  // Byt state.
     }
     // Om brandmannen har HAZMAT på sin nuvarande ruta men inte är vid exitTile
-    else if (currentTile->hasEvent(Event::HAZMAT))
+    else if (grid.currentTile->hasEvent(Event::HAZMAT))
     {
-        currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT temporärt.
+        grid.currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT temporärt.
         Tile* nextStep = pathToTarget.front(); 
         move(nextStep);
-        String msg = "Hazmat from " + String(lastTile->getRow()) + " " + String(lastTile->getColumn()) + " to " + String(currentTile->getRow()) + " " + String(currentTile->getColumn());
+        String msg = "Hazmat from " + String(grid.lastTile->getRow()) + " " + String(grid.lastTile->getColumn()) + " to " + String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn());
         messagesToBridge.push(msg);
         pathToTarget.erase(pathToTarget.begin());
-        currentTile->addEvent(Event::HAZMAT);  // Lägg tillbaka HAZMAT på rutan.
+        grid.currentTile->addEvent(Event::HAZMAT);  // Lägg tillbaka HAZMAT på rutan.
     }
     //FF flyttar till rutan med hazmat
     else
     {
-        move(targetTile);
-        bfsTo(exitTile);  // Beräkna kortaste vägen till exitTile.
+        move(grid.targetTile);
+        grid.bfsTo(grid.exitTile);  // Beräkna kortaste vägen till exitTile.
         pathToTarget.erase(pathToTarget.begin());  // Ta bort det aktuella steget från vägen.
-        messagesToBroadcast.push("RemoveHazmat " + String(targetTile->getRow()) + " " + String(targetTile->getColumn()));
+        messagesToBroadcast.push("RemoveHazmat " + String(grid.targetTile->getRow()) + " " + String(grid.targetTile->getColumn()));
 
     }
 }
 
 void Firefighter::rescuePerson()
 {
-    if (currentTile->hasEvent(Event::VICTIM) && currentTile == exitTile)
+    if (grid.currentTile->hasEvent(Event::VICTIM) && grid.currentTile == grid.exitTile)
     {
-        currentTile->removeEvent(Event::VICTIM);
-        messagesToBridge.push("Victim saved " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()));
+        grid.currentTile->removeEvent(Event::VICTIM);
+        messagesToBridge.push("Victim saved " + String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn()));
         hasMission = false;
         teamArrived = false;
         changeState();
     }
     // Om brandmannen har ett offer men inte är vid exitTile
-    else if (currentTile->hasEvent(Event::VICTIM))
+    else if (grid.currentTile->hasEvent(Event::VICTIM))
     {
-        String msg = "Victim from " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()) + " to ";
-        currentTile->removeEvent(Event::VICTIM);
+        String msg = "Victim from " + String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn()) + " to ";
+        grid.currentTile->removeEvent(Event::VICTIM);
         Tile* nextStep = pathToTarget.front();  // Hämta nästa steg.
         move(nextStep);  // Flytta till nästa ruta.
         pathToTarget.erase(pathToTarget.begin());
-        currentTile->addEvent(Event::VICTIM);
-        msg += String(currentTile->getRow()) + " " + String(currentTile->getColumn());
+        grid.currentTile->addEvent(Event::VICTIM);
+        msg += String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn());
         messagesToBridge.push(msg);
     }
 }
@@ -387,23 +365,23 @@ void Firefighter::wait()
 void Firefighter::TeamArrived()
 {
     teamArrived = true;
-    bfsTo(exitTile);
+    grid.bfsTo(grid.exitTile);
 }
 
 void Firefighter::startMission(int row, int column)
 {
     if (state == State::MOVING_HAZMAT) {
-        messagesToBroadcast.push("Hazmat " + String(currentTile->getRow()) + " " + String(currentTile->getColumn()));
+        messagesToBroadcast.push("Hazmat " + String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn()));
     }
-    targetTile = grid[row][column];
-    grid[row][column]->addEvent(Event::VICTIM);
+    grid.targetTile = grid.getTile(row, column);
+    grid.getTile(row, column)->addEvent(Event::VICTIM);
     hasMission = true;
     state = State::MOVING_TO_TARGET; 
 }
 
 void Firefighter::Die(int row, int column)
 {
-    if (currentTile->getRow() == row && currentTile->getColumn() == column)
+    if (grid.currentTile->getRow() == row && grid.currentTile->getColumn() == column)
     {
         state = State::DEAD;
     }
@@ -421,12 +399,12 @@ void Firefighter::Tick()
     }
     if (state == State::SEARCHING)
     {
-        if (atDeadEnd())
+        if (grid.atDeadEnd())
         {
-            if (lastTile->hasEvent(Event::FIRE))
+            if (grid.lastTile->hasEvent(Event::FIRE))
             {
                 state = State::PUTTING_OUT_FIRE;
-                targetTile = lastTile;
+                grid.targetTile = grid.lastTile;
             }
         }
     }
@@ -465,7 +443,7 @@ void Firefighter::Tick()
             break;                 
     }
 }
-
+/*
 void Firefighter::addWalls()
 {
     grid[0][0]->addWall(Wall::NORTH);
@@ -537,24 +515,24 @@ void Firefighter::addWalls()
     grid[5][7]->addWall(Wall::EAST);
     grid[5][7]->addWall(Wall::SOUTH);
     grid[5][7]->addWall(Wall::WEST);
-}
+}*/
 
 Firefighter::~Firefighter() {
-    for (int row = 0; row < 6; ++row) {
+    /*for (int row = 0; row < 6; ++row) {
         for (int col = 0; col < 8; ++col) {
             delete grid[row][col]; // Frigör varje dynamiskt allokerad Tile
             grid[row][col] = nullptr; // Bra vana att nullställa pekare
         }
-    }
+    }*/
 }
 
 void Firefighter::printGrid() {
-    for (int row = 0; row < 6; ++row) {
+    /*for (int row = 0; row < 6; ++row) {
         for (int col = 0; col < 8; ++col) {
             if (grid[row][col]->hasEvent(Event::FIRE)) 
             {
                 Serial.print("Tile has fire: " + String(row) + " " + String(col));
             } 
         }
-    }
+    }*/
 }

@@ -6,7 +6,6 @@
 // Definiera knapptryckningar i en array för skalbarhet
 Firefighter firefighter;
 
-
 const unsigned long DEBOUNCE_DELAY = 1000;
 bool buttonPressed[3] = {false, false, false};
 volatile bool buttonRaw[3] = {false, false, false};

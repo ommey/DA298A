@@ -11,9 +11,8 @@
 class BridgeComms 
 {
     private:
-        //String nodeName = "Bridge";
-        //namedMesh mesh;
         painlessMesh mesh;
+
         static void meshUpdate(void* pvParameters);
         static void meshBroadCastTask(void* pvParameters);
         static void serialWriteTask(void* pvParameters);

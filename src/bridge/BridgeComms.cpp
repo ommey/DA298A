@@ -5,9 +5,8 @@ BridgeComms::BridgeComms() : serialOutPutQueue(xQueueCreate(201, sizeof(char) * 
     Serial.begin(115200);
     Serial.setTimeout(50);
     mesh.init(MESH_SSID, MESH_PASSWORD, MESH_PORT);
-    mesh.setName(nodeName);
   
-    mesh.onReceive([this](String &from, String &msg) 
+    mesh.onReceive([this](uint32_t from, String &msg) 
     {
         this->enqueueSerialOutput(msg);
     });        

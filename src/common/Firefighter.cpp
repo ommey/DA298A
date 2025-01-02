@@ -208,6 +208,40 @@ Firefighter::~Firefighter()
 {
     delete &grid;
 }
+
+void Firefighter::registerSerialOutput(QueueHandle_t *serialOutputQueue)
+{
+    this->serialOutputQueue = serialOutputQueue;
+}
+
+void Firefighter::registerMeshOutput(QueueHandle_t *meshOutPutQueue)
+{
+    this->meshOutPutQueue = meshOutPutQueue;
+}
+
+ void Firefighter::enqueueMeshOutput(const Message &msg)
+{
+    if (msg.message != "") 
+    {
+        if (xQueueSend(*meshOutputQueue, &msg, 10) != pdPASS) 
+        {
+            Serial.println("Failed to add to mesh queue");
+        }
+    }
+}
+
+void Firefighter::enqueueSerialOutput(const String &msg)
+{
+    if (msg != "") 
+    {
+        char msgChar[256];
+        msg.toCharArray(msgChar, sizeof(msgChar));
+        if (xQueueSend(*serialOutPutQueue, &msgChar, 10) != pdPASS) 
+        {
+            Serial.println("Failed to add to serial queue");
+        }
+    }
+}
         
 void Firefighter::Tick() 
 {

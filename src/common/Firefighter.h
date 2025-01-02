@@ -19,31 +19,48 @@ enum class State
     DEAD,
 };
 
+struct Message
+{
+    uint32_t from;   
+    char message[100]; 
+
+    Message() : from(0) { message[0] = '\0'; }
+
+    Message(uint32_t fromID, const char* msg) : from(fromID)
+    {
+        strncpy(message, msg, sizeof(message) - 1);
+        message[sizeof(message) - 1] = '\0';
+    }
+};
+
 class Firefighter
 {
     private:
         random_device rd;
-        std::mt19937 gen;
-        std::uniform_int_distribution<> dist;
+        mt19937 gen;
+        uniform_int_distribution<> dist;
         int id;
         State state; 
         bool teamArrived;
+        uint32_t bridgeName = 533097877;
+        QueueHandle_t* serialOutputQueue;
+        QueueHandle_t* meshOutPutQueue;
 
     public:
         Grid grid; 
         bool hasMission;
         int nbrFirefighters;
         uint32_t leaderID; 
-        std::vector<uint32_t> teamMembers;
+        vector<uint32_t> teamMembers;
         bool pendingHelp = false;
         int tickCounter = 0;
 
         queue<String> messagesToBridge; // meddelanden som ska skickas till bridge
         queue<String> messagesToBroadcast; // meddelanden som ska skickas till alla noder (inte till bridge)
-        queue<std::pair<uint32_t, String>> messagesToNode; // meddelanden som ska skickas till en specific nod
+        queue<pair<uint32_t, String>> messagesToNode; // meddelanden som ska skickas till en specific nod
 
-        std::vector<std::pair<uint32_t, float>> positionsList; // Map of node IDs to their positions
-        std::vector<Tile*> pathToTarget; // Sparar den genererade vägen
+        vector<pair<uint32_t, float>> positionsList; // Map of node IDs to their positions
+        vector<Tile*> pathToTarget; // Sparar den genererade vägen
 
         Firefighter();
         ~Firefighter();  // Destructor for cleaning up dynamic memory
@@ -64,6 +81,11 @@ class Firefighter
         void TeamArrived();
         void startMission(int row, int column);
         void changeState();
+        void handleMessage(uint32_t from, String msg);
+        void registerSerialOutput(QueueHandle_t* serialOutputQueue);
+        void registerMeshOutput(QueueHandle_t* meshOutPutQueue);
+        void enqueueMeshOutput(const Message& msg);
+        void enqueueSerialOutput(const String& msg);
 };
 
 #endif  // FIREFIGHTER_H_

@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "Firefighter.h"
+#include "Comms.h"
 #include <cmath>
 #include <unordered_map>
 #include <string>
@@ -14,8 +15,8 @@ using namespace std;
 #define   MESH_PORT       5555
 
 Firefighter firefighter;
-uint32_t bridgeName = 533097877; // namnet på brygga-noden
-painlessMesh mesh; //variant på painlessMesh som kan skicka meddelanden till specifika noder baserat på deras egenvalda namn.
+static Comms comms(&firefighter);
+
 int missionTargetRow = 0;
 int missionTargetColumn = 0;
 int positionListCounter = 0;
@@ -133,6 +134,10 @@ void setup()
 {
   Serial.begin(115200);
   Serial.setTimeout(50);
+  delay(1000);
+  firefighter.registerSerialOutput(&comms.serialOutPutQueue);
+  firefighter.registerMeshOutput(&comms.meshOutputQueue);
+  comms.start();
 
   // Init hardware, buttons and TFT display and LED
   hardwareInit();
@@ -147,8 +152,6 @@ void setup()
 
   mesh.onReceive([](uint32_t from, String &msg) 
   {
-    printToDisplay("Recieved: " + msg);
-
     int row = 0;
     int column = 0;
     std::vector<String> tokens = tokenize(msg);

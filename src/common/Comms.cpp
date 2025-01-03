@@ -1,10 +1,15 @@
 #include "Comms.h"
 
-Comms::Comms(Firefighter* firefighter) : firefighter(firefighter), serialOutPutQueue(xQueueCreate(201, sizeof(char) * 256)), meshOutputQueue(xQueueCreate(201, sizeof(Message))) 
+Comms::Comms(Firefighter* firefighter) : firefighter(firefighter)/*, serialOutPutQueue(xQueueCreate(50, sizeof(char) * 50))*/, meshOutputQueue(xQueueCreate(50, sizeof(Message))) 
 {
     Serial.begin(115200);
     Serial.setTimeout(50);
     mesh.init(MESH_SSID, MESH_PASSWORD, MESH_PORT);
+
+    if (/*serialOutPutQueue == nullptr || */meshOutputQueue == nullptr) {
+    Serial.println("Failed to create one or more queues. Heap memory may be insufficient.");
+    while (true) {}
+}
 
     mesh.onReceive([this](uint32_t from, String &msg) 
     {    
@@ -13,12 +18,13 @@ Comms::Comms(Firefighter* firefighter) : firefighter(firefighter), serialOutPutQ
     
     mesh.onChangedConnections([this]() 
     {
-        enqueueSerialOutput("Changed connection");
+        //enqueueSerialOutput("Changed connection");
+        this->firefighter->nbrExpectedAnswers = mesh.getNodeList().size()-2;
     });
 
     mesh.onDroppedConnection([this](size_t nodeId) 
     {
-        enqueueSerialOutput("Dropped connection: " + String(nodeId));
+        //enqueueSerialOutput("Dropped connection: " + String(nodeId));
     });
 }
     
@@ -59,7 +65,7 @@ void Comms::meshWriteTask(void *pvParameters)
     }
 }
 
-void Comms::serialWriteTask(void *pvParameters)
+/*void Comms::serialWriteTask(void *pvParameters)
 {
     Comms* comms = static_cast<Comms*>(pvParameters);
     char msgChar[256];
@@ -81,9 +87,9 @@ void Comms::serialWriteTask(void *pvParameters)
         }
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
-}
+}*/
 
-void Comms::serialReadTask(void *pvParameters)
+/*void Comms::serialReadTask(void *pvParameters)
 {
     Comms* comms = static_cast<Comms*>(pvParameters);
     while (1) 
@@ -98,55 +104,50 @@ void Comms::serialReadTask(void *pvParameters)
         }
         vTaskDelay(30 / portTICK_PERIOD_MS);
     }
+}*/
+
+Comms::~Comms()
+{
+    //vQueueDelete(serialOutPutQueue);
+    vQueueDelete(meshOutputQueue);
 }
 
-    QueueHandle_t Comms::getSerialOutPutQueue()
-    { 
-        return serialOutPutQueue; 
+void Comms::start()
+{
+    if (xTaskCreate(meshUpdate, "meshUpdate", 4096, this, 1, NULL) != pdPASS) {
+        Serial.println("Failed to create meshUpdate task");
     }
-
-    Comms::~Comms()
-    {
-        vQueueDelete(serialOutPutQueue);
-        vQueueDelete(meshOutputQueue);
+   /* if (xTaskCreate(serialWriteTask, "serialWriteTask", 2048, this, 1, NULL) != pdPASS) {
+        Serial.println("Failed to create serialWriteTask");
     }
-
-    void Comms::start()
-    {
-        if (xTaskCreate(meshUpdate, "meshUpdate", 4096, this, 1, NULL) != pdPASS) {
-            Serial.println("Failed to create meshUpdate task");
-        }
-        if (xTaskCreate(serialWriteTask, "serialWriteTask", 2048, this, 1, NULL) != pdPASS) {
-            Serial.println("Failed to create serialWriteTask");
-        }
-        if (xTaskCreate(serialReadTask, "serialReadTask", 2048, this, 1, NULL) != pdPASS) {
-            Serial.println("Failed to create serialReadTask");
-        }
-        if (xTaskCreate(meshWriteTask, "meshBroadCastTask", 4096, this, 1, NULL) != pdPASS) {
-            Serial.println("Failed to create meshBroadCastTask");
-        }
+    if (xTaskCreate(serialReadTask, "serialReadTask", 2048, this, 1, NULL) != pdPASS) {
+        Serial.println("Failed to create serialReadTask");
+    }*/
+    if (xTaskCreate(meshWriteTask, "meshBroadCastTask", 4096, this, 1, NULL) != pdPASS) {
+        Serial.println("Failed to create meshBroadCastTask");
     }
+}
 
-    void Comms::enqueueMeshOutput(const Message &msg)
+void Comms::enqueueMeshOutput(const Message &msg)
+{
+    if (msg.message != "") 
     {
-        if (msg.message != "") 
+        if (xQueueSend(meshOutputQueue, &msg, 10) != pdPASS) 
         {
-            if (xQueueSend(meshOutputQueue, &msg, 10) != pdPASS) 
-            {
-                Serial.println("Failed to add to mesh queue");
-            }
+            Serial.println("Failed to add to mesh queue");
         }
     }
+}
 
-    void Comms::enqueueSerialOutput(const String &msg)
+/*void Comms::enqueueSerialOutput(const String &msg)
+{
+    if (msg != "") 
     {
-        if (msg != "") 
+        char msgChar[256];
+        msg.toCharArray(msgChar, sizeof(msgChar));
+        if (xQueueSend(serialOutPutQueue, &msgChar, 10) != pdPASS) 
         {
-            char msgChar[256];
-            msg.toCharArray(msgChar, sizeof(msgChar));
-            if (xQueueSend(serialOutPutQueue, &msgChar, 10) != pdPASS) 
-            {
-                Serial.println("Failed to add to serial queue");
-            }
+            Serial.println("Failed to add to serial queue");
         }
     }
+}*/

@@ -15,8 +15,7 @@ Grid::Grid()
     this->targetTile = grid[0][0];
     this->exitTile = grid[0][0];  
     
-    Serial.println("Grid constructor: Initializing...");
-   
+    addWalls();
 }
 
 void Grid::update(String event, int row, int column)
@@ -154,8 +153,7 @@ bool Grid::checkForEvent(Event event)
         targetTile = grid[currentTile->getRow()][currentTile->getColumn() - 1];
         hasEvent = true;
     }
-
-  return hasEvent;
+    return hasEvent;
 }
 
 Tile*& Grid::getTile(int row, int column)

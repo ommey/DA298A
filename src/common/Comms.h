@@ -17,14 +17,12 @@ class Comms
 
         static void meshUpdate(void* pvParameters);
         static void meshWriteTask(void* pvParameters);
-        static void serialWriteTask(void* pvParameters);
-        static void serialReadTask(void* pvParameters);
+        //static void serialWriteTask(void* pvParameters);
+        //static void serialReadTask(void* pvParameters);
 
     public:
-        QueueHandle_t serialOutPutQueue;
+        //QueueHandle_t serialOutPutQueue;
         QueueHandle_t meshOutputQueue;
-
-        QueueHandle_t getSerialOutPutQueue();
 
         Comms(Firefighter* firefighter);
 
@@ -34,7 +32,7 @@ class Comms
 
         void enqueueMeshOutput(const Message& msg);
 
-        void enqueueSerialOutput(const String& msg);
+        //void enqueueSerialOutput(const String& msg);
 };
 
 #endif

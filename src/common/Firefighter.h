@@ -4,6 +4,9 @@
 #include "Grid.h"
 #include <random>
 #include "hardware_config.h"
+#include "mesh.h"
+#include <string>
+#include <sstream>
 
 using namespace std;
 
@@ -22,7 +25,7 @@ enum class State
 struct Message
 {
     uint32_t from;   
-    char message[100]; 
+    char message[50]; 
 
     Message() : from(0) { message[0] = '\0'; }
 
@@ -43,8 +46,14 @@ class Firefighter
         State state; 
         bool teamArrived;
         uint32_t bridgeName = 533097877;
-        QueueHandle_t* serialOutputQueue;
+        //QueueHandle_t* serialOutputQueue;
         QueueHandle_t* meshOutPutQueue;
+        int missionTargetRow = 0;
+        int missionTargetColumn = 0;
+        int positionListCounter = 0;
+
+        bool tryParseInt(const String& str, int& outValue);  
+        vector<String> tokenize(const String& expression);
 
     public:
         Grid grid; 
@@ -54,10 +63,7 @@ class Firefighter
         vector<uint32_t> teamMembers;
         bool pendingHelp = false;
         int tickCounter = 0;
-
-        queue<String> messagesToBridge; // meddelanden som ska skickas till bridge
-        queue<String> messagesToBroadcast; // meddelanden som ska skickas till alla noder (inte till bridge)
-        queue<pair<uint32_t, String>> messagesToNode; // meddelanden som ska skickas till en specific nod
+        int nbrExpectedAnswers = 0;
 
         vector<pair<uint32_t, float>> positionsList; // Map of node IDs to their positions
         vector<Tile*> pathToTarget; // Sparar den genererade vägen
@@ -79,13 +85,15 @@ class Firefighter
         void Die(int row, int column);
         void wait();
         void TeamArrived();
-        void startMission(int row, int column);
+        void startMission();
         void changeState();
         void handleMessage(uint32_t from, String msg);
-        void registerSerialOutput(QueueHandle_t* serialOutputQueue);
+        //void registerSerialOutput(QueueHandle_t* serialOutputQueue);
         void registerMeshOutput(QueueHandle_t* meshOutPutQueue);
         void enqueueMeshOutput(const Message& msg);
-        void enqueueSerialOutput(const String& msg);
+        //void enqueueSerialOutput(const String& msg);
+        void handleHelpRequest(uint32_t from, int row, int column);
+        void handlePositions(uint32_t from, int row, int column);
 };
 
 #endif  // FIREFIGHTER_H_

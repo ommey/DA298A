@@ -300,7 +300,14 @@ void Firefighter::handleMessage(uint32_t from, String msg)
         }
         else if (tokens[0] == "RemoveHazmat")
         {
-            grid.getTile(row, column)->removeEvent(Event::HAZMAT);
+            if (grid.getTile(row, column) == grid.currentTile || grid.getTile(row, column) == grid.targetTile)
+            {
+                return; 
+            }
+            else 
+            {
+                grid.getTile(row, column)->removeEvent(Event::HAZMAT);
+            }
         } 
         else if (tokens[0] == "MaybeDie")
         {

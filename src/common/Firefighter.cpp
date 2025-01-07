@@ -319,10 +319,12 @@ void Firefighter::handleMessage(uint32_t from, String msg)
         }
         else if (tokens[0] == "Help") 
         {
+            printToDisplay("Help request recieved");
             handleHelpRequest(from, row, column);            
         }
         else if (tokens[0] == "ReqPos") 
         {
+            printToDisplay("ReqPos recieved and answered");
             enqueueMeshOutput(Message(from, "Pos " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn() ));
         }
         else if (tokens[0] == "Yes") 

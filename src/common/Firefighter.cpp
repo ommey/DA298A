@@ -176,7 +176,7 @@ void Firefighter::wait()
 {
     if (teamArrived) 
     {
-        //printToDisplay("Team has arrived");
+        printToDisplay("Team has arrived");
         setLEDOff();
         state = State::RESCUING_PERSON;
     }
@@ -320,12 +320,12 @@ void Firefighter::handleMessage(uint32_t from, String msg)
         }
         else if (tokens[0] == "Yes") 
         { 
-            //printToDisplay("Yes recieved");       
+            printToDisplay("Yes recieved");       
             teamMembers.push_back(from);
         }
         else if (tokens[0] == "No") 
         { 
-            //printToDisplay("No recieved");
+            printToDisplay("No recieved");
             for (int i = 0; i < teamMembers.size(); i++) {
                 if (positionsList[positionListCounter].first == teamMembers[i]) {
                 i = 0;
@@ -399,7 +399,7 @@ void Firefighter::handlePositions(uint32_t from, int row, int column)
     
     for (positionListCounter; positionListCounter < 1; positionListCounter++) 
     {
-      //printToDisplay("Called firefighter: " + String(positionsList[positionListCounter].first) + " with distance: " + String(positionsList[positionListCounter].second));
+      printToDisplay("Called firefighter: " + String(positionsList[positionListCounter].first) + " with distance: " + String(positionsList[positionListCounter].second));
       enqueueMeshOutput(Message(positionsList[positionListCounter].first, "Help " + grid.targetTile->getRow() + ' ' + grid.targetTile->getColumn() ));
     }
   }
@@ -409,7 +409,7 @@ void Firefighter::handleHelpRequest(uint32_t from, int row, int column)
 {
   leaderID = from;  
   setLEDColor(0, 0, 255);  // Blå hjälpfärg
-  //printToDisplay("Help request recieved");
+  printToDisplay("Help request recieved");
   missionTargetRow = row;
   missionTargetColumn = column;
   tickCounter = 0;

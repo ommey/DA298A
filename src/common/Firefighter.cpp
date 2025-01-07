@@ -22,7 +22,8 @@ void Firefighter::changeState()
     else if (grid.checkForEvent(Event::VICTIM))
     {
         string messageContent = "RemoveVictim " + to_string(grid.targetTile->getRow()) + " " + to_string(grid.targetTile->getColumn());
-        enqueueMeshOutput(Message(0, messageContent.c_str()));       
+        enqueueMeshOutput(Message(0, messageContent.c_str()));
+        leaderID = 0;       
         state = State::MOVING_TO_TARGET; 
     }
     else if (grid.checkForEvent(Event::FIRE)) 
@@ -78,7 +79,7 @@ void Firefighter::moveToTarget()
     }
     if (grid.currentTile == grid.targetTile)    
     {  
-        if (leaderID != NULL)
+        if (leaderID != NULL && leaderID != 0)
         {
             enqueueMeshOutput(Message(leaderID, "Arrived")); 
         }      

@@ -1,6 +1,6 @@
 #include "Comms.h"
 
-Comms::Comms(Firefighter* firefighter) : firefighter(firefighter)/*, serialOutPutQueue(xQueueCreate(50, sizeof(char) * 50))*/, meshOutputQueue(xQueueCreate(50, sizeof(Message))) 
+Comms::Comms(Firefighter* firefighter) : firefighter(firefighter)/*, serialOutPutQueue(xQueueCreate(50, sizeof(char) * 50))*/, meshOutputQueue(xQueueCreate(100, sizeof(Message))) 
 {
     Serial.begin(115200);
     Serial.setTimeout(50);

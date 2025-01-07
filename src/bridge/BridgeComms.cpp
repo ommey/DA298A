@@ -1,6 +1,6 @@
 #include "BridgeComms.h"
 
-BridgeComms::BridgeComms() : serialOutPutQueue(xQueueCreate(50, sizeof(char) * 50)), meshOutputQueue(xQueueCreate(50, sizeof(char) * 50)) 
+BridgeComms::BridgeComms() : serialOutPutQueue(xQueueCreate(100, sizeof(char) * 50)), meshOutputQueue(xQueueCreate(100, sizeof(char) * 50)) 
 {
     Serial.begin(115200);
     Serial.setTimeout(50);

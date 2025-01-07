@@ -26,10 +26,11 @@ struct Message
 {
     uint32_t from;   
     char message[50]; 
+    bool sendToBridge;
 
     Message() : from(0) { message[0] = '\0'; }
 
-    Message(uint32_t fromID, const char* msg) : from(fromID)
+    Message(uint32_t fromID, const char* msg, bool sendToBridge = false) : from(fromID), sendToBridge(sendToBridge)
     {
         strncpy(message, msg, sizeof(message) - 1);
         message[sizeof(message) - 1] = '\0';
@@ -42,10 +43,8 @@ class Firefighter
         random_device rd;
         mt19937 gen;
         uniform_int_distribution<> dist;
-        int id;
         State state; 
         bool teamArrived;
-        uint32_t bridgeName = 533097877;
         //QueueHandle_t* serialOutputQueue;
         QueueHandle_t* meshOutPutQueue;
         int missionTargetRow = 0;
@@ -58,15 +57,16 @@ class Firefighter
     public:
         Grid grid; 
         bool hasMission;
-        int nbrFirefighters;
-        uint32_t leaderID; 
+        int nbrFirefighters = 1;
+        uint32_t leaderID = 0; 
         vector<uint32_t> teamMembers;
-        bool pendingHelp = false;
+        bool pendingHelp;
         int tickCounter = 0;
         int nbrExpectedAnswers = 0;
+                uint32_t bridgeName = 533097877;
+
 
         vector<pair<uint32_t, float>> positionsList; // Map of node IDs to their positions
-        vector<Tile*> pathToTarget; // Sparar den genererade vägen
 
         Firefighter();
         ~Firefighter();  // Destructor for cleaning up dynamic memory

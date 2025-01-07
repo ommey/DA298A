@@ -46,13 +46,26 @@ void Comms::meshWriteTask(void *pvParameters)
     {        
         if (xQueueReceive(comms->meshOutputQueue, &message, 10) == pdPASS) 
         {
-            if (message.from == 0)
+            if (message.from == 0 && message.sendToBridge)
             {
                 if (!comms->mesh.sendBroadcast(message.message)) 
                 {
                     Serial.println("Failed to send broadcast");
                 }
             } 
+            if (message.from == 0 && !message.sendToBridge)
+            {
+                for (uint32_t node : comms->mesh.getNodeList())   
+                {
+                    if (node != comms->firefighter->bridgeName) 
+                    {
+                        if (!comms->mesh.sendSingle(node, message.message)) 
+                        {
+                            Serial.println("Failed to send singel");
+                        }
+                    }
+                }
+            }            
             else 
             {
                 if (!comms->mesh.sendSingle(message.from, message.message)) 
@@ -114,7 +127,7 @@ Comms::~Comms()
 
 void Comms::start()
 {
-    if (xTaskCreate(meshUpdate, "meshUpdate", 4096, this, 1, NULL) != pdPASS) {
+    if (xTaskCreate(meshUpdate, "meshUpdate", 8192, this, 1, NULL) != pdPASS) {
         Serial.println("Failed to create meshUpdate task");
     }
    /* if (xTaskCreate(serialWriteTask, "serialWriteTask", 2048, this, 1, NULL) != pdPASS) {
@@ -123,7 +136,7 @@ void Comms::start()
     if (xTaskCreate(serialReadTask, "serialReadTask", 2048, this, 1, NULL) != pdPASS) {
         Serial.println("Failed to create serialReadTask");
     }*/
-    if (xTaskCreate(meshWriteTask, "meshBroadCastTask", 4096, this, 1, NULL) != pdPASS) {
+    if (xTaskCreate(meshWriteTask, "meshBroadCastTask", 8192, this, 1, NULL) != pdPASS) {
         Serial.println("Failed to create meshBroadCastTask");
     }
 }

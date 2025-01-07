@@ -23,7 +23,8 @@ void Firefighter::changeState()
     {
         string messageContent = "RemoveVictim " + to_string(grid.targetTile->getRow()) + " " + to_string(grid.targetTile->getColumn());
         enqueueMeshOutput(Message(0, messageContent.c_str()));
-        leaderID = 0;       
+        leaderID = 0;      
+        printToDisplay("Rescuing person"); 
         state = State::MOVING_TO_TARGET; 
     }
     else if (grid.checkForEvent(Event::FIRE)) 
@@ -36,6 +37,7 @@ void Firefighter::changeState()
     } 
     else if (grid.checkForEvent(Event::HAZMAT))
     {
+        printToDisplay("Moving Hazmat");
         state = State::MOVING_HAZMAT;
     } 
     else 
@@ -72,22 +74,26 @@ void Firefighter::searchForTarget()
 }
 
 void Firefighter::moveToTarget()
-{
-    if (grid.currentTile != grid.targetTile && pathToTarget.empty())
+{ 
+    if (grid.currentTile != grid.targetTile && grid.pathToTarget.empty())
     {
+        printToDisplay("Calculating path");
+        enqueueMeshOutput(Message(bridgeName, "Calculating path"));
         grid.bfsTo(grid.targetTile);
     }
     if (grid.currentTile == grid.targetTile)    
-    {  
-        if (leaderID != NULL && leaderID != 0)
+    { 
+        printToDisplay("Arrived at target"); 
+        if (leaderID != 0)
         {
             enqueueMeshOutput(Message(leaderID, "Arrived")); 
         }      
         setLEDColor(255,0,0);
         state = State::WAITING;
     } else {
-        move(pathToTarget.front());
-        pathToTarget.erase(pathToTarget.begin());
+        printToDisplay("Else");
+        move(grid.pathToTarget.front());
+        grid.pathToTarget.erase(grid.pathToTarget.begin());
     }
 }
 
@@ -96,7 +102,7 @@ void Firefighter::extinguishFire()
     grid.targetTile->removeEvent(Event::FIRE);
     grid.targetTile->addEvent(Event::SMOKE);
     string messageContent = "RemoveFire " + to_string(grid.targetTile->getRow()) + " " + to_string(grid.targetTile->getColumn());
-    enqueueMeshOutput(Message(0, messageContent.c_str()));
+    enqueueMeshOutput(Message(0, messageContent.c_str(), true));
     changeState(); 
 }
 
@@ -104,7 +110,7 @@ void Firefighter::extinguishSmoke()
 {
     grid.targetTile->removeEvent(Event::SMOKE);
     string messageContent = "RemoveSmoke " + to_string(grid.targetTile->getRow()) + " " + to_string(grid.targetTile->getColumn()) ;
-    enqueueMeshOutput(Message(0, messageContent.c_str())); 
+    enqueueMeshOutput(Message(0, messageContent.c_str(), true)); 
     changeState();
 }
 
@@ -115,26 +121,26 @@ void Firefighter::moveHazmat()
     {
         grid.currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT från rutan.
         string messageContent = "RemoveHazmat " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
-        enqueueMeshOutput(Message(0, messageContent.c_str()));
+        enqueueMeshOutput(Message(0, messageContent.c_str(), true));
         changeState();  // Byt state.
     }
     // Om brandmannen har HAZMAT på sin nuvarande ruta men inte är vid exitTile
     else if (grid.currentTile->hasEvent(Event::HAZMAT))
     {
         grid.currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT temporärt.
-        Tile* nextStep = pathToTarget.front(); 
+        Tile* nextStep = grid.pathToTarget.front(); 
         move(nextStep);
         
         string messageContent = "Hazmat from " + to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) + " to " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());       
         enqueueMeshOutput(Message(bridgeName, messageContent.c_str()));
-        pathToTarget.erase(pathToTarget.begin());
+        grid.pathToTarget.erase(grid.pathToTarget.begin());
         grid.currentTile->addEvent(Event::HAZMAT);  // Lägg tillbaka HAZMAT på rutan.
     }
     else
-    {
+    {        
         move(grid.targetTile);
         grid.bfsTo(grid.exitTile);  // Beräkna kortaste vägen till exitTile.
-        pathToTarget.erase(pathToTarget.begin());  // Ta bort det aktuella steget från vägen.
+        grid.pathToTarget.erase(grid.pathToTarget.begin());  // Ta bort det aktuella steget från vägen.
         string messageContent = "RemoveHazmat " + to_string(grid.targetTile->getRow()) + " " + to_string(grid.targetTile->getColumn()) ;
         enqueueMeshOutput(Message(0, messageContent.c_str()));
     }
@@ -146,7 +152,7 @@ void Firefighter::rescuePerson()
     {
         grid.currentTile->removeEvent(Event::VICTIM);
         string messageContent = "RemoveVictim " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn()) ;
-        enqueueMeshOutput(Message(0, messageContent.c_str()));
+        enqueueMeshOutput(Message(0, messageContent.c_str(), true));
         hasMission = false;
         teamArrived = false;
         changeState();
@@ -155,9 +161,9 @@ void Firefighter::rescuePerson()
     else if (grid.currentTile->hasEvent(Event::VICTIM))
     {
         grid.currentTile->removeEvent(Event::VICTIM);
-        Tile* nextStep = pathToTarget.front();  // Hämta nästa steg.
+        Tile* nextStep = grid.pathToTarget.front();  // Hämta nästa steg.
         move(nextStep);  // Flytta till nästa ruta.
-        pathToTarget.erase(pathToTarget.begin());
+        grid.pathToTarget.erase(grid.pathToTarget.begin());
         grid.currentTile->addEvent(Event::VICTIM);
         ostringstream oss;
         oss << "Victim from " << grid.lastTile->getRow() << ' ' << grid.lastTile->getColumn() << " to " << grid.lastTile->getRow() << ' ' << grid.lastTile->getColumn();
@@ -183,6 +189,10 @@ void Firefighter::wait()
         nbrFirefighters = 1;
         teamArrived = true;
     }
+    else
+    {
+        printToDisplay("Waiting for team");    
+    }
 }
 
 void Firefighter::TeamArrived()
@@ -195,7 +205,7 @@ void Firefighter::startMission()
 {
     if (state == State::MOVING_HAZMAT) 
     {
-        enqueueMeshOutput(Message(0, "Hazmat " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn() )); 
+        enqueueMeshOutput(Message(0, "Hazmat " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn())); 
     }
     grid.targetTile = grid.getTile(missionTargetRow, missionTargetColumn);
     grid.getTile(missionTargetRow, missionTargetColumn)->addEvent(Event::VICTIM);

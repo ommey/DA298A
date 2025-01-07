@@ -13,7 +13,7 @@ Grid::Grid()
     this->currentTile = grid[3][3];  
     this->lastTile = grid[3][3];
     this->targetTile = grid[0][0];
-    this->exitTile = grid[0][0];  
+    this->exitTile = grid[0][3];  
     
     addWalls();
 }
@@ -163,8 +163,6 @@ Tile*& Grid::getTile(int row, int column)
 
 void Grid::bfsTo(Tile* destination)
 {
-    if (currentTile == destination) return;  // Om vi redan är vid målet, gör ingenting.
-
     std::queue<Tile*> toVisit;  // BFS-kö för att hålla reda på vilka rutor som ska utforskas.
     std::unordered_map<Tile*, Tile*> parent;  // För att återskapa vägen från destination tillbaka till start.
     std::unordered_map<Tile*, bool> visited;  // Markera vilka rutor vi har besökt.
@@ -177,8 +175,13 @@ void Grid::bfsTo(Tile* destination)
 
     bool found = false;  // Flagga för att hålla koll på om destinationen har hittats.
 
-    while (!toVisit.empty() && !found)
+    int maxIterations = 1000; // Max antal iterationer för att undvika oändliga loopar
+    int iterations = 0;
+
+    while (!toVisit.empty() && !found && iterations < maxIterations)
     {
+        iterations++;
+
         Tile* tile = toVisit.front();  // Hämta den första rutan i kön.
         toVisit.pop();  // Ta bort rutan från kön.
 
@@ -196,6 +199,9 @@ void Grid::bfsTo(Tile* destination)
             if (newRow >= 0 && newRow < 6 && newCol >= 0 && newCol < 8)
             {
                 Tile* neighbor = getTile(newRow, newCol);  // Hämta grannen från rutnätet.
+
+                // Kontrollera att grannen existerar
+                if (!neighbor) continue;
 
                 // Kontrollera att grannen:
                 // 1. Inte är besökt.
@@ -220,6 +226,10 @@ void Grid::bfsTo(Tile* destination)
             }
         }
     }
+
+    // Kontrollera om maxgränsen för iterationer nåddes
+    if (iterations >= maxIterations) { return; }
+
     // Om destinationen hittades, rekonstruera vägen.
     if (found)
     {

@@ -290,24 +290,29 @@ void Firefighter::handleMessage(uint32_t from, String msg)
         } 
         else if (tokens[0] == "RemoveVictim")
         {
+            printToDisplay("Removed Victim");
             grid.getTile(row, column)->removeEvent(Event::VICTIM);
         }
         else if (tokens[0] == "RemoveFire")
         {
+            printToDisplay("Removed Fire");
             grid.getTile(row, column)->removeEvent(Event::FIRE);
         }
         else if (tokens[0] == "RemoveSmoke")
         {
+            printToDisplay("Removed Smoke");
             grid.getTile(row, column)->removeEvent(Event::SMOKE);
         }
         else if (tokens[0] == "RemoveHazmat")
         {
             if (grid.getTile(row, column) == grid.currentTile || grid.getTile(row, column) == grid.targetTile)
             {
+                printToDisplay("Can't remove Hazmat");
                 return; 
             }
             else 
             {
+                printToDisplay("Removed Hazmat");
                 grid.getTile(row, column)->removeEvent(Event::HAZMAT);
             }
         } 
@@ -317,11 +322,12 @@ void Firefighter::handleMessage(uint32_t from, String msg)
         }                
         else if (tokens[0] == "Pos")
         {
+            printToDisplay("Received a position");
             handlePositions(from, row, column);
         }
         else if (tokens[0] == "Help") 
         {
-            printToDisplay("Help request recieved");
+            printToDisplay("Can you help me?");
             handleHelpRequest(from, row, column);            
         }
         else if (tokens[0] == "ReqPos") 
@@ -348,10 +354,12 @@ void Firefighter::handleMessage(uint32_t from, String msg)
         }
         else if (tokens[0] == "Arrived")
         {
+            printToDisplay("Arrived recieved");
             nbrFirefighters++;
         }
         else if (tokens[0] == "TeamArrived")
         {
+            printToDisplay("TeamArrived recieved");
             TeamArrived();
         } 
     }

@@ -81,6 +81,12 @@ void Firefighter::moveToTarget()
         enqueueMeshOutput(Message(bridgeName, "Calculating path"));
         grid.bfsTo(grid.targetTile);
     }
+    if (grid.currentTile != grid.targetTile && !grid.pathToTarget.empty())
+    {
+        printToDisplay("Moved to target tile");
+        move(grid.pathToTarget.front());
+        grid.pathToTarget.erase(grid.pathToTarget.begin());
+    }
     if (grid.currentTile == grid.targetTile)    
     { 
         printToDisplay("Arrived at target"); 
@@ -90,10 +96,6 @@ void Firefighter::moveToTarget()
         }      
         setLEDColor(255,0,0);
         state = State::WAITING;
-    } else {
-        printToDisplay("Else");
-        move(grid.pathToTarget.front());
-        grid.pathToTarget.erase(grid.pathToTarget.begin());
     }
 }
 

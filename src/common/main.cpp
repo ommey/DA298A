@@ -43,33 +43,13 @@ void checkDebouncedButton(volatile bool& buttonRaw, unsigned long& lastDebounceT
   }
 }
 
-void setup() 
+static void buttonHandlerTask(void* p)
 {
-  Serial.begin(115200);
-  Serial.setTimeout(50);
-  delay(1000);
-
-  comms = new Comms(&firefighter);
-
-  //firefighter.registerSerialOutput(&comms->serialOutPutQueue);
-  firefighter.registerMeshOutput(&comms->meshOutputQueue);
-  comms->start();
-
-  // Init hardware, buttons and TFT display and LED
-  hardwareInit();
-
-  // Attach interrupts to the button pins
-  attachInterrupt(digitalPinToInterrupt(BUTTON_1), NoButton, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_2), HelpButton, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_3), YesButton, FALLING);
-}
-
-// inget görs här, aktiviteter sköts i freeRTOS tasks
-void loop() 
-{
-  checkDebouncedButton(noButtonRaw, lastDebounceTime1, noButtonPressed);
-  checkDebouncedButton(helpButtonRaw, lastDebounceTime2, helpButtonPressed);
-  checkDebouncedButton(yesButtonRaw, lastDebounceTime3, yesButtonPressed);
+  while(1)
+  {
+    checkDebouncedButton(noButtonRaw, lastDebounceTime1, noButtonPressed);
+    checkDebouncedButton(helpButtonRaw, lastDebounceTime2, helpButtonPressed);
+    checkDebouncedButton(yesButtonRaw, lastDebounceTime3, yesButtonPressed);
 
   if (noButtonPressed)
   {
@@ -98,5 +78,34 @@ void loop()
     //firefighter.enqueueMeshOutput(Message(firefighter.leaderID, "Yes"));
     firefighter.startMission();
     setLEDOff(); 
-  }  
+  } 
+  vTaskDelay(50 / portTICK_PERIOD_MS); 
+  }
 }
+
+void setup() 
+{
+  Serial.begin(115200);
+  Serial.setTimeout(50);
+  delay(1000);
+
+  comms = new Comms(&firefighter);
+
+  //firefighter.registerSerialOutput(&comms->serialOutPutQueue);
+  firefighter.registerMeshOutput(&comms->meshOutputQueue);
+  comms->start();
+
+  // Init hardware, buttons and TFT display and LED
+  hardwareInit();
+
+  // Attach interrupts to the button pins
+  attachInterrupt(digitalPinToInterrupt(BUTTON_1), NoButton, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_2), HelpButton, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_3), YesButton, FALLING);
+
+  xTaskCreatePinnedToCore(buttonHandlerTask, "buttonHandlerTask", 4096, NULL, 1, NULL, 0);
+}
+
+// inget görs här, aktiviteter sköts i freeRTOS tasks
+void loop() 
+{}

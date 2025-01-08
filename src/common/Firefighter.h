@@ -86,7 +86,6 @@ class Firefighter
         void TeamArrived();
         void startMission();
         void changeState();
-        void sendHelpRequest();
         void handleMessage(uint32_t from, String msg);
         //void registerSerialOutput(QueueHandle_t* serialOutputQueue);
         void registerMeshOutput(QueueHandle_t* meshOutPutQueue);

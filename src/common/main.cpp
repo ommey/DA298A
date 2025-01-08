@@ -66,8 +66,7 @@ static void buttonHandlerTask(void* p)
     printToDisplay("Help requested");
     firefighter.positionsList.clear();  // Rensa listan över positioner
     //comms->enqueueMeshOutput(Message(0, "ReqPos")); 
-    //firefighter.enqueueMeshOutput(Message(0, "ReqPos"));
-    firefighter.sendHelpRequest();
+    firefighter.enqueueMeshOutput(Message(0, "ReqPos"));
   }
 
   if (yesButtonPressed) 
@@ -75,7 +74,7 @@ static void buttonHandlerTask(void* p)
     yesButtonPressed = false;
     printToDisplay("Yes pressed");
     //comms->enqueueMeshOutput(Message(firefighter.leaderID, "Yes"));
-    //firefighter.enqueueMeshOutput(Message(firefighter.leaderID, "Yes"));
+    firefighter.enqueueMeshOutput(Message(firefighter.leaderID, "Yes"));
     firefighter.startMission();
     setLEDOff(); 
   } 

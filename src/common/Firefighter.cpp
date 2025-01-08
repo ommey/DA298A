@@ -94,7 +94,7 @@ void Firefighter::moveToTarget()
         {
             enqueueMeshOutput(Message(leaderID, "Arrived")); 
         }      
-        setLEDColor(255,0,0);
+        setLEDColor(0,0,255);
         state = State::WAITING;
     }
 }
@@ -214,13 +214,6 @@ void Firefighter::startMission()
     hasMission = true;
     state = State::MOVING_TO_TARGET;
     printToDisplay("Mission started");
-    enqueueMeshOutput(Message(leaderID, "Yes")); 
-}
-
-void Firefighter::sendHelpRequest() 
-{
-    printToDisplay("Sending help request");
-    enqueueMeshOutput(Message(0, "ReqPos"));
 }
 
 void Firefighter::Die(int row, int column)
@@ -338,10 +331,12 @@ void Firefighter::handleMessage(uint32_t from, String msg)
         }
         else if (tokens[0] == "Yes") 
         { 
+            setLEDColor(0, 255, 0);  // Grön färg
             teamMembers.push_back(from);
         }
         else if (tokens[0] == "No") 
         { 
+            setLEDColor(255, 0, 0);  // Röd färg
             for (int i = 0; i < teamMembers.size(); i++) {
                 if (positionsList[positionListCounter].first == teamMembers[i]) {
                 i = 0;
@@ -424,7 +419,7 @@ void Firefighter::handlePositions(uint32_t from, int row, int column)
 void Firefighter::handleHelpRequest(uint32_t from, int row, int column)
 {
   leaderID = from;  
-  setLEDColor(0, 0, 255);  // Blå hjälpfärg
+  setLEDColor(255, 255, 255);  // Blå hjälpfärg
   printToDisplay("Help request recieved");
   missionTargetRow = row;
   missionTargetColumn = column;

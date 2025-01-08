@@ -123,7 +123,7 @@ void Firefighter::moveHazmat()
     {
         grid.currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT från rutan.
         string messageContent = "RemoveHazmat " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
-        enqueueMeshOutput(Message(0, messageContent.c_str(), true));
+        enqueueMeshOutput(Message(bridgeName, messageContent.c_str(), true));
         changeState();  // Byt state.
     }
     // Om brandmannen har HAZMAT på sin nuvarande ruta men inte är vid exitTile
@@ -154,7 +154,7 @@ void Firefighter::rescuePerson()
     {
         grid.currentTile->removeEvent(Event::VICTIM);
         string messageContent = "RemoveVictim " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn()) ;
-        enqueueMeshOutput(Message(0, messageContent.c_str(), true));
+        enqueueMeshOutput(Message(bridgeName, messageContent.c_str(), true));
         hasMission = false;
         teamArrived = false;
         changeState();
@@ -213,11 +213,13 @@ void Firefighter::startMission()
     grid.getTile(missionTargetRow, missionTargetColumn)->addEvent(Event::VICTIM);
     hasMission = true;
     state = State::MOVING_TO_TARGET;
+    printToDisplay("Mission started");
     enqueueMeshOutput(Message(leaderID, "Yes")); 
 }
 
 void Firefighter::sendHelpRequest() 
 {
+    printToDisplay("Sending help request");
     enqueueMeshOutput(Message(0, "ReqPos"));
 }
 
@@ -270,6 +272,7 @@ void Firefighter::enqueueMeshOutput(const Message &msg)
 
 void Firefighter::handleMessage(uint32_t from, String msg)
 {
+    printToDisplay(msg);     
     int row = 0;
     int column = 0;
     vector<String> tokens = tokenize(msg);
@@ -296,29 +299,24 @@ void Firefighter::handleMessage(uint32_t from, String msg)
         } 
         else if (tokens[0] == "RemoveVictim")
         {
-            printToDisplay("Removed Victim");
             grid.getTile(row, column)->removeEvent(Event::VICTIM);
         }
         else if (tokens[0] == "RemoveFire")
         {
-            printToDisplay("Removed Fire");
             grid.getTile(row, column)->removeEvent(Event::FIRE);
         }
         else if (tokens[0] == "RemoveSmoke")
         {
-            printToDisplay("Removed Smoke");
             grid.getTile(row, column)->removeEvent(Event::SMOKE);
         }
         else if (tokens[0] == "RemoveHazmat")
         {
             if (grid.getTile(row, column) == grid.currentTile || grid.getTile(row, column) == grid.targetTile)
             {
-                printToDisplay("Can't remove Hazmat");
                 return; 
             }
             else 
             {
-                printToDisplay("Removed Hazmat");
                 grid.getTile(row, column)->removeEvent(Event::HAZMAT);
             }
         } 
@@ -328,27 +326,22 @@ void Firefighter::handleMessage(uint32_t from, String msg)
         }                
         else if (tokens[0] == "Pos")
         {
-            printToDisplay("Received a position");
             handlePositions(from, row, column);
         }
         else if (tokens[0] == "Help") 
         {
-            printToDisplay("Can you help me?");
             handleHelpRequest(from, row, column);            
         }
         else if (tokens[0] == "ReqPos") 
         {
-            printToDisplay("ReqPos recieved and answered");
             enqueueMeshOutput(Message(from, "Pos " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn() ));
         }
         else if (tokens[0] == "Yes") 
         { 
-            printToDisplay("Yes recieved");       
             teamMembers.push_back(from);
         }
         else if (tokens[0] == "No") 
         { 
-            printToDisplay("No recieved");
             for (int i = 0; i < teamMembers.size(); i++) {
                 if (positionsList[positionListCounter].first == teamMembers[i]) {
                 i = 0;
@@ -360,12 +353,10 @@ void Firefighter::handleMessage(uint32_t from, String msg)
         }
         else if (tokens[0] == "Arrived")
         {
-            printToDisplay("Arrived recieved");
             nbrFirefighters++;
         }
         else if (tokens[0] == "TeamArrived")
         {
-            printToDisplay("TeamArrived recieved");
             TeamArrived();
         } 
     }

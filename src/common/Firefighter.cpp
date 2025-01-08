@@ -212,7 +212,13 @@ void Firefighter::startMission()
     grid.targetTile = grid.getTile(missionTargetRow, missionTargetColumn);
     grid.getTile(missionTargetRow, missionTargetColumn)->addEvent(Event::VICTIM);
     hasMission = true;
-    state = State::MOVING_TO_TARGET; 
+    state = State::MOVING_TO_TARGET;
+    enqueueMeshOutput(Message(leaderID, "Yes")); 
+}
+
+void Firefighter::sendHelpRequest() 
+{
+    enqueueMeshOutput(Message(0, "ReqPos"));
 }
 
 void Firefighter::Die(int row, int column)

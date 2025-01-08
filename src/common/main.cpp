@@ -75,7 +75,8 @@ void loop()
   {
     noButtonPressed = false;
     printToDisplay("No pressed");
-    comms->enqueueMeshOutput(Message(firefighter.leaderID, "No")); 
+    //comms->enqueueMeshOutput(Message(firefighter.leaderID, "No")); 
+    firefighter.enqueueMeshOutput(Message(firefighter.leaderID, "No"));
     setLEDOff();
   }
 
@@ -84,14 +85,16 @@ void loop()
     helpButtonPressed = false;
     printToDisplay("Help requested");
     firefighter.positionsList.clear();  // Rensa listan över positioner
-    comms->enqueueMeshOutput(Message(0, "ReqPos")); 
+    //comms->enqueueMeshOutput(Message(0, "ReqPos")); 
+    firefighter.enqueueMeshOutput(Message(0, "ReqPos"));
   }
 
   if (yesButtonPressed) 
   {
     yesButtonPressed = false;
     printToDisplay("Yes pressed");
-    comms->enqueueMeshOutput(Message(firefighter.leaderID, "Yes"));
+    //comms->enqueueMeshOutput(Message(firefighter.leaderID, "Yes"));
+    firefighter.enqueueMeshOutput(Message(firefighter.leaderID, "Yes"));
     firefighter.startMission();
     setLEDOff(); 
   }  

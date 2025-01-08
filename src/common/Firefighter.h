@@ -63,8 +63,7 @@ class Firefighter
         bool pendingHelp;
         int tickCounter = 0;
         int nbrExpectedAnswers = 0;
-                uint32_t bridgeName = 533097877;
-
+        uint32_t bridgeName = 533097877;
 
         vector<pair<uint32_t, float>> positionsList; // Map of node IDs to their positions
 

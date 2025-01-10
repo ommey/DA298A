@@ -229,11 +229,6 @@ Firefighter::~Firefighter()
     delete &grid;
 }
 
-/*void Firefighter::registerSerialOutput(QueueHandle_t *serialOutputQueue)
-{
-    this->serialOutputQueue = serialOutputQueue;
-}*/
-
 void Firefighter::registerMeshOutput(QueueHandle_t *meshOutputQueue)
 {
     this->meshOutPutQueue = meshOutputQueue;
@@ -250,19 +245,6 @@ void Firefighter::enqueueMeshOutput(const Message &msg)
     }
 }
 
-/*void Firefighter::enqueueSerialOutput(const String &msg)
-{
-    if (msg != "" && serialOutputQueue != nullptr) 
-    {
-        char msgChar[256];
-        msg.toCharArray(msgChar, sizeof(msgChar));
-        if (xQueueSend(*serialOutputQueue, &msgChar, 10) != pdPASS) 
-        {
-            Serial.println("Failed to add to serial queue");
-        }
-    }
-}*/
-
 void Firefighter::handleMessage(uint32_t from, String msg)
 {
     printToDisplay(msg);     
@@ -270,10 +252,41 @@ void Firefighter::handleMessage(uint32_t from, String msg)
     int column = 0;
     vector<String> tokens = tokenize(msg);
 
-      if (tokens[0] == "Tick") { Tick(); }
-
-      else if (tokens.size() == 3 && tryParseInt(tokens[1], row) && tryParseInt(tokens[2], column)) 
-      {      
+    if (tokens[0] == "Tick") 
+    { 
+        Tick(); 
+    } 
+    else if (tokens[0] == "ReqPos") 
+    {
+        enqueueMeshOutput(Message(from, "Pos " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn() ));
+    }
+    else if (tokens[0] == "Yes") 
+    { 
+        setLEDColor(0, 255, 0);  // Grön färg
+        teamMembers.push_back(from);
+    }
+    else if (tokens[0] == "No") 
+    { 
+        setLEDColor(255, 0, 0);  // Röd färg
+        for (int i = 0; i < teamMembers.size(); i++) {
+            if (positionsList[positionListCounter].first == teamMembers[i]) {
+            i = 0;
+            positionListCounter = (positionListCounter + 1) % positionsList.size();
+            }
+        }
+        enqueueMeshOutput(Message(positionsList[positionListCounter].first, "Help " + grid.targetTile->getRow() + ' ' + grid.targetTile->getColumn() ));
+        positionListCounter = (positionListCounter + 1) % positionsList.size();
+    }
+    else if (tokens[0] == "Arrived")
+    {
+        nbrFirefighters++;
+    }
+    else if (tokens[0] == "TeamArrived")
+    {
+        TeamArrived();
+    } 
+    else if (tokens.size() == 3 && tryParseInt(tokens[1], row) && tryParseInt(tokens[2], column)) 
+    {      
         if (tokens[0] == "Fire")
         {
             grid.getTile(row, column)->addEvent(Event::FIRE);
@@ -325,35 +338,6 @@ void Firefighter::handleMessage(uint32_t from, String msg)
         {
             handleHelpRequest(from, row, column);            
         }
-        else if (tokens[0] == "ReqPos") 
-        {
-            enqueueMeshOutput(Message(from, "Pos " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn() ));
-        }
-        else if (tokens[0] == "Yes") 
-        { 
-            setLEDColor(0, 255, 0);  // Grön färg
-            teamMembers.push_back(from);
-        }
-        else if (tokens[0] == "No") 
-        { 
-            setLEDColor(255, 0, 0);  // Röd färg
-            for (int i = 0; i < teamMembers.size(); i++) {
-                if (positionsList[positionListCounter].first == teamMembers[i]) {
-                i = 0;
-                positionListCounter = (positionListCounter + 1) % positionsList.size();
-                }
-            }
-            enqueueMeshOutput(Message(positionsList[positionListCounter].first, "Help " + grid.targetTile->getRow() + ' ' + grid.targetTile->getColumn() ));
-            positionListCounter = (positionListCounter + 1) % positionsList.size();
-        }
-        else if (tokens[0] == "Arrived")
-        {
-            nbrFirefighters++;
-        }
-        else if (tokens[0] == "TeamArrived")
-        {
-            TeamArrived();
-        } 
     }
 }
 

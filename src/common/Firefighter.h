@@ -38,38 +38,22 @@ struct Message
 class Firefighter
 {
     private:
-        random_device rd;
-        mt19937 gen;
-        uniform_int_distribution<> dist;
         State state; 
-        bool teamArrived;
-        //QueueHandle_t* serialOutputQueue;
+        mt19937 gen;
+        random_device rd;
+        uniform_int_distribution<> dist;
         QueueHandle_t* meshOutPutQueue;
+        Grid grid;
+        vector<uint32_t> teamMembers;
+        bool pendingHelp;
+        bool hasMission;
+        bool teamArrived;
+        int tickCounter = 0;
         int missionTargetRow = 0;
         int missionTargetColumn = 0;
         int positionListCounter = 0;
-
-        bool tryParseInt(const String& str, int& outValue);  
-        vector<String> tokenize(const String& expression);
-
-    public:
-        Grid grid; 
-        bool hasMission;
         int nbrFirefighters = 1;
-        uint32_t leaderID = 0; 
-        vector<uint32_t> teamMembers;
-        bool pendingHelp;
-        int tickCounter = 0;
-        int nbrExpectedAnswers = 0;
-        uint32_t bridgeName = 533097877;
-
-        vector<pair<uint32_t, float>> positionsList; // Map of node IDs to their positions
-
-        Firefighter();
-        ~Firefighter();  // Destructor for cleaning up dynamic memory
-
-        void setId(int id);
-        int getId() const;    
+    
         void Tick(); 
         void searchForTarget();
         void moveToTarget();
@@ -78,19 +62,29 @@ class Firefighter
         void moveHazmat();
         void rescuePerson();
         void move(const Tile* destination);
-        bool ChangeState(Tile* tile);
         void Die(int row, int column);
         void wait();
         void TeamArrived();
-        void startMission();
         void changeState();
-        void handleMessage(uint32_t from, String msg);
-        //void registerSerialOutput(QueueHandle_t* serialOutputQueue);
-        void registerMeshOutput(QueueHandle_t* meshOutPutQueue);
         void enqueueMeshOutput(const Message& msg);
-        //void enqueueSerialOutput(const String& msg);
         void handleHelpRequest(uint32_t from, int row, int column);
         void handlePositions(uint32_t from, int row, int column);
+        bool ChangeState(Tile* tile);
+        bool tryParseInt(const String& str, int& outValue);  
+        vector<String> tokenize(const String& expression);
+
+    public: 
+        uint32_t bridgeName = 533097877;
+        uint32_t leaderID = 0; 
+        vector<pair<uint32_t, float>> positionsList; // Map of node IDs to their positions
+        int nbrExpectedAnswers = 0;
+
+        Firefighter();
+        ~Firefighter();
+        void startMission();
+        void registerMeshOutput(QueueHandle_t* meshOutPutQueue);
+        void handleMessage(uint32_t from, String msg);
+
 };
 
 #endif  // FIREFIGHTER_H_

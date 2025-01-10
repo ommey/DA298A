@@ -89,11 +89,11 @@ void Firefighter::moveToTarget()
     }
     if (grid.currentTile == grid.targetTile)    
     { 
-        printToDisplay("Arrived at target"); 
+        printToDisplay("Arrived at target");
         if (leaderID != 0)
         {
             enqueueMeshOutput(Message(leaderID, "Arrived")); 
-        }      
+        }
         setLEDColor(0,0,255);
         state = State::WAITING;
     }
@@ -267,45 +267,45 @@ void Firefighter::enqueueMeshOutput(const Message &msg)
 
 void Firefighter::handleMessage(uint32_t from, String msg)
 {
-    printToDisplay(msg);
+    printToDisplay(from + ": " + msg);
     int row = 0;
     int column = 0;
     vector<String> tokens = tokenize(msg);
 
       if (tokens[0] == "Tick") { Tick(); }
       else if (tokens[0] == "ReqPos") 
-        {
-            printToDisplay("Pos sent");
-            enqueueMeshOutput(Message(from, "Pos " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn()));
-        }
-        else if (tokens[0] == "Yes") 
-        { 
-            setLEDColor(0, 255, 0);  // Grön färg
-            teamMembers.push_back(from);
-        }
-        else if (tokens[0] == "No") 
-        { 
-            setLEDColor(255, 0, 0);  // Röd färg
-            for (int i = 0; i < teamMembers.size(); i++) {
-                if (positionsList[positionListCounter].first == teamMembers[i]) {
+    {
+        string messageContent = "Pos " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn();
+        enqueueMeshOutput(Message(from, messageContent.c_str()));
+        printToDisplay("sent: Pos " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn());
+    }
+    else if (tokens[0] == "Yes") 
+    { 
+        setLEDColor(0, 255, 0);  // Grön färg
+        teamMembers.push_back(from);
+    }
+    else if (tokens[0] == "No") 
+    { 
+        setLEDColor(255, 0, 0);  // Röd färg
+        for (int i = 0; i < teamMembers.size(); i++) {
+            if (positionsList[positionListCounter].first == teamMembers[i]) {
                 i = 0;
                 positionListCounter = (positionListCounter + 1) % positionsList.size();
-                }
             }
-            enqueueMeshOutput(Message(positionsList[positionListCounter].first, "Help " + grid.targetTile->getRow() + ' ' + grid.targetTile->getColumn() ));
-            positionListCounter = (positionListCounter + 1) % positionsList.size();
         }
-        else if (tokens[0] == "Arrived")
-        {
-            nbrFirefighters++;
-        }
-        else if (tokens[0] == "TeamArrived")
-        {
-            TeamArrived();
-        }
-
-      else if (tokens.size() == 3 && tryParseInt(tokens[1], row) && tryParseInt(tokens[2], column)) 
-      {      
+        enqueueMeshOutput(Message(positionsList[positionListCounter].first, "Help " + grid.targetTile->getRow() + ' ' + grid.targetTile->getColumn() ));
+        positionListCounter = (positionListCounter + 1) % positionsList.size();
+    }
+    else if (tokens[0] == "Arrived")
+    {
+        nbrFirefighters++;
+    }
+    else if (tokens[0] == "TeamArrived")
+    {
+        TeamArrived();
+    }
+    else if (tokens.size() == 3 && tryParseInt(tokens[1], row) && tryParseInt(tokens[2], column)) 
+    {      
         if (tokens[0] == "Fire")
         {
             grid.getTile(row, column)->addEvent(Event::FIRE);
@@ -399,7 +399,8 @@ bool Firefighter::tryParseInt(const String& str, int& outValue)
 }
 
 void Firefighter::handlePositions(uint32_t from, int row, int column)
-{  
+{ 
+    printToDisplay("Handling positions");
   float dis = sqrt(pow(row - grid.targetTile->getRow(), 2) + pow(column-grid.targetTile->getColumn(), 2));
   positionsList.push_back({from, dis}); // Spara nodens position i positionsList
   if (positionsList.size() == nbrExpectedAnswers) //Check if all nodes anwsered, if true, start sorting

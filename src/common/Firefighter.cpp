@@ -401,24 +401,24 @@ bool Firefighter::tryParseInt(const String& str, int& outValue)
 void Firefighter::handlePositions(uint32_t from, int row, int column)
 { 
     printToDisplay("Handling positions");
-  float dis = sqrt(pow(row - grid.targetTile->getRow(), 2) + pow(column-grid.targetTile->getColumn(), 2));
-  positionsList.push_back({from, dis}); // Spara nodens position i positionsList
-  if (positionsList.size() == nbrExpectedAnswers) //Check if all nodes anwsered, if true, start sorting
-  { 
-    sort(positionsList.begin(), positionsList.end(),
-    [](const pair<uint32_t, float>& a, const pair<uint32_t, float>& b) 
-    {
-      return a.second < b.second; // Compare by distance
-    });
+    float dis = sqrt(pow(row - grid.targetTile->getRow(), 2) + pow(column-grid.targetTile->getColumn(), 2));
+    positionsList.push_back({from, dis}); // Spara nodens position i positionsList
+    if (positionsList.size() == nbrExpectedAnswers) //Check if all nodes anwsered, if true, start sorting
+    { 
+        sort(positionsList.begin(), positionsList.end(),
+        [](const pair<uint32_t, float>& a, const pair<uint32_t, float>& b) 
+        {
+            return a.second < b.second; // Compare by distance
+        });
     
-    positionListCounter = 0;
+        positionListCounter = 0;
     
-    for (positionListCounter; positionListCounter < 1; positionListCounter++) 
-    {
-      printToDisplay("Called firefighter: " + String(positionsList[positionListCounter].first) + " with distance: " + String(positionsList[positionListCounter].second));
-      enqueueMeshOutput(Message(positionsList[positionListCounter].first, "Help " + grid.targetTile->getRow() + ' ' + grid.targetTile->getColumn() ));
+        for (positionListCounter; positionListCounter < 1; positionListCounter++) 
+        {
+            printToDisplay("Called firefighter: " + String(positionsList[positionListCounter].first) + " with distance: " + String(positionsList[positionListCounter].second));
+            enqueueMeshOutput(Message(positionsList[positionListCounter].first, "Help " + grid.targetTile->getRow() + ' ' + grid.targetTile->getColumn() ));
+        }
     }
-  }
 }
 
 void Firefighter::handleHelpRequest(uint32_t from, int row, int column)

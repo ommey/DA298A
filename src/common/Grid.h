@@ -2,11 +2,9 @@
 #define GRID_H_
 
 #include "Tile.h"
-#include <array>
 #include <arduino.h>
 #include <unordered_map>
 #include <queue>
-#include <vector>
 
 using namespace std;
 

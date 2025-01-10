@@ -4,8 +4,6 @@
 #include "Grid.h"
 #include <random>
 #include "hardware_config.h"
-#include "mesh.h"
-#include <string>
 #include <sstream>
 
 using namespace std;

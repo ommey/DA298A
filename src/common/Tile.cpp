@@ -1,5 +1,4 @@
 #include "Tile.h"
-#include <arduino.h>
    
     Tile::Tile(int row, int column)
     {

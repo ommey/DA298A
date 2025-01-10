@@ -1,7 +1,6 @@
 #ifndef COMMS_H
 #define COMMS_H
 
-#include <Arduino.h>
 #include "painlessMesh.h"
 #include "Firefighter.h"
 

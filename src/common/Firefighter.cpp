@@ -481,7 +481,7 @@ void Firefighter::Tick()
             rescuePerson();
             break;  
         case State::VICTIM:
-            //Serial.println("DEAD");
+            //Serial.println("VICTIM");
             break; 
         case State::WAITING:
             //Serial.println("WAITING");

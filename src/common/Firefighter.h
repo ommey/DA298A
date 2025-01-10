@@ -19,7 +19,7 @@ enum class State
     PUTTING_OUT_SMOKE,
     MOVING_HAZMAT,     
     RESCUING_PERSON, 
-    DEAD,
+    VICTIM,
 };
 
 struct Message

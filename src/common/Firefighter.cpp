@@ -10,7 +10,7 @@ void Firefighter::move(const Tile* destination)
     grid.lastTile = grid.currentTile;
     grid.currentTile = grid.getTile(destination->getRow(), destination->getColumn());
     string messageContent = "Firefighter from " + to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) + " to " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn()) ;
-    enqueueMeshOutput(Message(bridgeName, messageContent.c_str())); 
+    enqueueMeshOutput(Message(bridgeName, messageContent.c_str()));
 }
 
 void Firefighter::changeState()
@@ -186,7 +186,7 @@ void Firefighter::wait()
     {
         for(uint32_t member : teamMembers)
         {
-            enqueueMeshOutput(Message(member, "TeamArrived")); 
+            enqueueMeshOutput(Message(member, "TeamArrived"));
         }
         nbrFirefighters = 1;
         teamArrived = true;
@@ -213,7 +213,9 @@ void Firefighter::startMission()
     grid.getTile(missionTargetRow, missionTargetColumn)->addEvent(Event::VICTIM);
     hasMission = true;
     state = State::MOVING_TO_TARGET;
+    clearDisplay();
     printToDisplay("Mission started");
+    printDirection(grid.currentTile->getColumn(), grid.currentTile->getRow(), missionTargetColumn, missionTargetRow);
 }
 
 void Firefighter::Die(int row, int column)
@@ -265,12 +267,42 @@ void Firefighter::enqueueMeshOutput(const Message &msg)
 
 void Firefighter::handleMessage(uint32_t from, String msg)
 {
-    printToDisplay(msg);     
+    printToDisplay(msg);
     int row = 0;
     int column = 0;
     vector<String> tokens = tokenize(msg);
 
       if (tokens[0] == "Tick") { Tick(); }
+      else if (tokens[0] == "ReqPos") 
+        {
+            printToDisplay("Pos sent");
+            enqueueMeshOutput(Message(from, "Pos " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn()));
+        }
+        else if (tokens[0] == "Yes") 
+        { 
+            setLEDColor(0, 255, 0);  // Grön färg
+            teamMembers.push_back(from);
+        }
+        else if (tokens[0] == "No") 
+        { 
+            setLEDColor(255, 0, 0);  // Röd färg
+            for (int i = 0; i < teamMembers.size(); i++) {
+                if (positionsList[positionListCounter].first == teamMembers[i]) {
+                i = 0;
+                positionListCounter = (positionListCounter + 1) % positionsList.size();
+                }
+            }
+            enqueueMeshOutput(Message(positionsList[positionListCounter].first, "Help " + grid.targetTile->getRow() + ' ' + grid.targetTile->getColumn() ));
+            positionListCounter = (positionListCounter + 1) % positionsList.size();
+        }
+        else if (tokens[0] == "Arrived")
+        {
+            nbrFirefighters++;
+        }
+        else if (tokens[0] == "TeamArrived")
+        {
+            TeamArrived();
+        }
 
       else if (tokens.size() == 3 && tryParseInt(tokens[1], row) && tryParseInt(tokens[2], column)) 
       {      
@@ -325,35 +357,7 @@ void Firefighter::handleMessage(uint32_t from, String msg)
         {
             handleHelpRequest(from, row, column);            
         }
-        else if (tokens[0] == "ReqPos") 
-        {
-            enqueueMeshOutput(Message(from, "Pos " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn() ));
-        }
-        else if (tokens[0] == "Yes") 
-        { 
-            setLEDColor(0, 255, 0);  // Grön färg
-            teamMembers.push_back(from);
-        }
-        else if (tokens[0] == "No") 
-        { 
-            setLEDColor(255, 0, 0);  // Röd färg
-            for (int i = 0; i < teamMembers.size(); i++) {
-                if (positionsList[positionListCounter].first == teamMembers[i]) {
-                i = 0;
-                positionListCounter = (positionListCounter + 1) % positionsList.size();
-                }
-            }
-            enqueueMeshOutput(Message(positionsList[positionListCounter].first, "Help " + grid.targetTile->getRow() + ' ' + grid.targetTile->getColumn() ));
-            positionListCounter = (positionListCounter + 1) % positionsList.size();
-        }
-        else if (tokens[0] == "Arrived")
-        {
-            nbrFirefighters++;
-        }
-        else if (tokens[0] == "TeamArrived")
-        {
-            TeamArrived();
-        } 
+        //
     }
 }
 
@@ -396,7 +400,7 @@ bool Firefighter::tryParseInt(const String& str, int& outValue)
 
 void Firefighter::handlePositions(uint32_t from, int row, int column)
 {  
-  float dis = sqrt(pow(row-grid.targetTile->getRow(),2)+pow(column-grid.targetTile->getColumn(),2));
+  float dis = sqrt(pow(row - grid.targetTile->getRow(), 2) + pow(column-grid.targetTile->getColumn(), 2));
   positionsList.push_back({from, dis}); // Spara nodens position i positionsList
   if (positionsList.size() == nbrExpectedAnswers) //Check if all nodes anwsered, if true, start sorting
   { 

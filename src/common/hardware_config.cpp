@@ -36,8 +36,16 @@ void printToDisplay(const String& message, int x, int y) {
     tft.print(message);
 }
 
+void printDirection(int x_from, int y_from, int x_to, int y_to) {
+    tft.fillScreen(TFT_BLUE);
+    tft.setCursor(10, 20);
+    tft.print("Move to ");
+    tft.print(x_to + ',' + y_to + " from " + x_from + ',' + y_from);
+}
+
 void clearDisplay() {
     tft.fillScreen(TFT_BLUE);
+    tft.setCursor(10, 10);
 }
 
 void setLEDColor(uint8_t r, uint8_t g, uint8_t b) {

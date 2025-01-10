@@ -17,6 +17,7 @@ extern Adafruit_NeoPixel RGB_LED;
 void hardwareInit();
 void printToDisplay(String message);
 void printToDisplay(const String& message, int x, int y);
+void printDirection(int x_from, int y_from, int x_to, int y_to);
 void clearDisplay();
 void setLEDColor(uint8_t r, uint8_t g, uint8_t b);
 void setLEDOff();

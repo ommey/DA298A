@@ -1,9 +1,7 @@
 #ifndef HARDWARE_CONFIG_H_
 #define HARDWARE_CONFIG_H_
 
-#include <Arduino.h>
 #include <TFT_eSPI.h>
-#include <SPI.h>
 #include <Adafruit_NeoPixel.h>
 
 #define BUTTON_1 GPIO_NUM_22

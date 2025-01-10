@@ -13,7 +13,7 @@ Grid::Grid()
     this->currentTile = grid[3][3];  
     this->lastTile = grid[3][3];
     this->targetTile = grid[0][0];
-    this->exitTile = grid[0][3];  
+    this->exitTile = grid[0][3];
     
     addWalls();
 }

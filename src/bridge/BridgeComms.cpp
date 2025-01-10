@@ -13,8 +13,7 @@ BridgeComms::BridgeComms() : serialOutPutQueue(xQueueCreate(100, sizeof(char) * 
 
     mesh.onChangedConnections([this]()
     {
-        this->enqueueSerialOutput("Changed connection");
-        this->enqueueMeshOutput("amount nodes connected: " + String(this->mesh.getNodeList().size()));
+        this->enqueueSerialOutput("Changed connection: " + String(mesh.getNodeList().size()));
     });
 }
     

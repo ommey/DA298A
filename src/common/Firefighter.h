@@ -4,8 +4,6 @@
 #include "Grid.h"
 #include <random>
 #include "hardware_config.h"
-#include "mesh.h"
-#include <string>
 #include <sstream>
 
 using namespace std;
@@ -19,7 +17,7 @@ enum class State
     PUTTING_OUT_SMOKE,
     MOVING_HAZMAT,     
     RESCUING_PERSON, 
-    DEAD,
+    VICTIM,
 };
 
 struct Message

@@ -222,7 +222,7 @@ void Firefighter::Die(int row, int column)
 {
     if (grid.currentTile->getRow() == row && grid.currentTile->getColumn() == column)
     {
-        state = State::DEAD;
+        state = State::VICTIM;
     }
 }
 
@@ -480,7 +480,7 @@ void Firefighter::Tick()
             //Serial.println("RESCUING_PERSON");
             rescuePerson();
             break;  
-        case State::DEAD:
+        case State::VICTIM:
             //Serial.println("DEAD");
             break; 
         case State::WAITING:

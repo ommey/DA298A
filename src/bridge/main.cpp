@@ -1,6 +1,4 @@
-#include <Arduino.h>
 #include "BridgeComms.h"
-#include "SPI.h"
 
 
 void setup() 

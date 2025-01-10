@@ -1,10 +1,5 @@
-#include <Arduino.h>
 #include "Firefighter.h"
 #include "Comms.h"
-#include <cmath>
-#include <unordered_map>
-#include <string>
-#include "hardware_config.h"
 
 using namespace std;
 

@@ -1,7 +1,6 @@
 #ifndef BRIDGECOMMS_H
 #define BRIDGECOMMS_H
 
-#include <Arduino.h>
 #include "painlessmesh.h"
 
 #define   MESH_SSID       "meshNetwork"

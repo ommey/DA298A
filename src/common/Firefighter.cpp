@@ -9,7 +9,7 @@ void Firefighter::move(const Tile* destination)
 {  
     grid.lastTile = grid.currentTile;
     grid.currentTile = grid.getTile(destination->getRow(), destination->getColumn());
-    string messageContent = "Firefighter from " + to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) + " to " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn()) ;
+    string messageContent = "Firefighter from " + to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) + " to " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
     enqueueMeshOutput(Message(bridgeName, messageContent.c_str())); 
 }
 
@@ -96,6 +96,7 @@ void Firefighter::moveToTarget()
             enqueueMeshOutput(Message(leaderID, "Arrived")); 
         }
         setLEDColor(0, 0, 255, 0); // Blå färg
+        grid.pathToTarget.clear(); 
         state = State::WAITING;
     }
 }
@@ -125,14 +126,14 @@ void Firefighter::moveHazmat()
         grid.currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT från rutan.
         string messageContent = "RemoveHazmat " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
         enqueueMeshOutput(Message(bridgeName, messageContent.c_str(), true));
+        grid.pathToTarget.clear();
         changeState();  // Byt state.
     }
     // Om brandmannen har HAZMAT på sin nuvarande ruta men inte är vid exitTile
-    else if (grid.currentTile->hasEvent(Event::HAZMAT))
+    else if (grid.currentTile->hasEvent(Event::HAZMAT) && !grid.pathToTarget.empty())
     {
-        grid.currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT temporärt.
-        Tile* nextStep = grid.pathToTarget.front(); 
-        move(nextStep);
+        grid.currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT temporärt.        
+        move(grid.pathToTarget.front());
         
         string messageContent = "Hazmat from " + to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) + " to " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());       
         enqueueMeshOutput(Message(bridgeName, messageContent.c_str()));
@@ -152,7 +153,7 @@ void Firefighter::moveHazmat()
 void Firefighter::rescuePerson()
 {
     Serial.println("In rescuingPerson function");
-    if (grid.currentTile->hasEvent(Event::VICTIM) && grid.currentTile == grid.exitTile)
+    if (grid.currentTile == grid.exitTile)
     {
         Serial.println("At exit tile");
         grid.currentTile->removeEvent(Event::VICTIM);
@@ -160,10 +161,11 @@ void Firefighter::rescuePerson()
         enqueueMeshOutput(Message(bridgeName, messageContent.c_str(), true));
         hasMission = false;
         teamArrived = false;
+        grid.pathToTarget.clear();
         changeState();
     }
     // Om brandmannen har ett offer men inte är vid exitTile
-    else if (grid.currentTile->hasEvent(Event::VICTIM))
+    else if (!grid.pathToTarget.empty())
     {
         Serial.println("Moving victim");
         grid.currentTile->removeEvent(Event::VICTIM);
@@ -172,7 +174,16 @@ void Firefighter::rescuePerson()
         grid.currentTile->addEvent(Event::VICTIM);
         string messageContent = "Victim from " +  to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) + " to " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
         enqueueMeshOutput(Message(bridgeName, messageContent.c_str()));
-    }
+    } /*
+    else 
+    { 
+        grid.bfsTo(grid.exitTile); 
+        grid.pathToTarget.erase(grid.pathToTarget.begin());
+        move(grid.pathToTarget.front());  // Flytta till nästa ruta.
+        grid.pathToTarget.erase(grid.pathToTarget.begin());
+        string messageContent = "Victim from " +  to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) + " to " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
+        enqueueMeshOutput(Message(bridgeName, messageContent.c_str()));
+    }*/
 }
 
 void Firefighter::wait()
@@ -189,8 +200,9 @@ void Firefighter::wait()
         {
             enqueueMeshOutput(Message(member, "TeamArrived")); 
         }
-        nbrFirefighters = 1;
-        teamArrived = true;
+        nbrFirefighters = 0;
+        TeamArrived();
+        teamMembers.clear(); 
     }
     else
     {
@@ -202,6 +214,7 @@ void Firefighter::TeamArrived()
 {
     teamArrived = true;
     grid.bfsTo(grid.exitTile);
+    grid.pathToTarget.erase(grid.pathToTarget.begin());
 }
 
 void Firefighter::startMission()
@@ -408,7 +421,7 @@ void Firefighter::handlePositions(uint32_t from, int row, int column)
     
     positionListCounter = 0;
     
-    for (positionListCounter; positionListCounter < 1; positionListCounter++) 
+    for (positionListCounter; positionListCounter < 2; positionListCounter++) 
     {
       string messageContent = "Help " + to_string(grid.targetTile->getRow()) + ' ' + to_string(grid.targetTile->getColumn());
       enqueueMeshOutput(Message(positionsList[positionListCounter].first, messageContent.c_str()));

@@ -45,14 +45,12 @@ class Firefighter
         QueueHandle_t* meshOutPutQueue;
         Grid grid;
         vector<uint32_t> teamMembers;
-        bool pendingHelp;
         bool hasMission;
         bool teamArrived;
-        int tickCounter = 0;
         int missionTargetRow = 0;
         int missionTargetColumn = 0;
         int positionListCounter = 0;
-        int nbrFirefighters = 1;
+        int nbrFirefighters = 0;
     
         void Tick(); 
         void searchForTarget();
@@ -79,6 +77,8 @@ class Firefighter
         uint32_t leaderID = 0; 
         vector<pair<uint32_t, float>> positionsList; // Map of node IDs to their positions
         int nbrExpectedAnswers = 0;
+        int tickCounter = 0;
+        bool pendingHelp;
 
         Firefighter();
         ~Firefighter();

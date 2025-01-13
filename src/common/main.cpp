@@ -52,12 +52,15 @@ static void buttonHandlerTask(void* p)
     printToDisplay("No pressed");
     comms->enqueueMeshOutput(Message(firefighter.leaderID, "No")); 
     setLEDOff();
+    firefighter.pendingHelp = false;
+    firefighter.tickCounter = 0;
   }
 
   if (helpButtonPressed) 
   {
     helpButtonPressed = false;
     printToDisplay("Help requested");
+    firefighter.leaderID = 0; 
     firefighter.positionsList.clear();  // Rensa listan över positioner
     comms->enqueueMeshOutput(Message(0, "ReqPos")); 
   }
@@ -69,6 +72,8 @@ static void buttonHandlerTask(void* p)
     comms->enqueueMeshOutput(Message(firefighter.leaderID, "Yes"));
     firefighter.startMission();
     setLEDOff(); 
+    firefighter.pendingHelp = false;
+    firefighter.tickCounter = 0;
   } 
   vTaskDelay(50 / portTICK_PERIOD_MS); 
   }

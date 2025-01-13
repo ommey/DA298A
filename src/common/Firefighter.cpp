@@ -15,13 +15,12 @@ Firefighter::Firefighter() : gen(esp_random()), dist(1, 4) // TODO: testar annan
     this->currentTile = grid[3][3];  // Pekar på första tile
     this->lastTile = grid[3][3];
     this->targetTile = grid[0][0];
-    this->exitTile = grid[0][0]; 
+    this->exitTile = grid[0][3]; 
     this->hasMission = false;
     this->nbrFirefighters = 1;
 
-    changeState();
-    
     addWalls();
+    changeState();
 }
 
 void Firefighter::setId(int id)

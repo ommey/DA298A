@@ -258,7 +258,8 @@ void Firefighter::handleMessage(uint32_t from, String msg)
     } 
     else if (tokens[0] == "ReqPos") 
     {
-        enqueueMeshOutput(Message(from, "Pos " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn() ));
+        string messageContent = "Pos " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
+        enqueueMeshOutput(Message(from, messageContent.c_str()));
     }
     else if (tokens[0] == "Yes") 
     { 

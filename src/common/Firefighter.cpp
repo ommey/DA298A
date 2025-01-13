@@ -33,120 +33,12 @@ int Firefighter::getId() const
     return id;
 }    
 
-void Firefighter::bfsTo(Tile* destination)
-{
-    if (currentTile == destination) return;  // Om vi redan är vid målet, gör ingenting.
-
-    std::queue<Tile*> toVisit;  // BFS-kö för att hålla reda på vilka rutor som ska utforskas.
-    std::unordered_map<Tile*, Tile*> parent;  // För att återskapa vägen från destination tillbaka till start.
-    std::unordered_map<Tile*, bool> visited;  // Markera vilka rutor vi har besökt.
-    pathToTarget.clear();  // Rensa eventuell tidigare beräknad väg.
-
-    // Starta BFS från nuvarande ruta
-    toVisit.push(currentTile);
-    visited[currentTile] = true;
-    parent[currentTile] = nullptr;
-
-    bool found = false;  // Flagga för att hålla koll på om destinationen har hittats.
-
-    while (!toVisit.empty() && !found)
-    {
-        Tile* tile = toVisit.front();  // Hämta den första rutan i kön.
-        toVisit.pop();  // Ta bort rutan från kön.
-
-        // Definiera möjliga riktningar: NORTH, EAST, SOUTH, WEST.
-        std::vector<std::pair<int, int>> directions = {
-            {-1, 0}, {0, 1}, {1, 0}, {0, -1}  // (-1,0)=NORTH, (0,1)=EAST, (1,0)=SOUTH, (0,-1)=WEST.
-        };
-
-        for (auto& dir : directions)  // Gå igenom alla riktningar.
-        {
-            int newRow = tile->getRow() + dir.first;  // Beräkna ny rad.
-            int newCol = tile->getColumn() + dir.second;  // Beräkna ny kolumn.
-
-            // Kontrollera att den nya positionen är inom rutnätets gränser.
-            if (newRow >= 0 && newRow < 6 && newCol >= 0 && newCol < 8)
-            {
-                Tile* neighbor = grid[newRow][newCol];  // Hämta grannen från rutnätet.
-
-                // Kontrollera att grannen:
-                // 1. Inte är besökt.
-                // 2. Inte har en vägg i den aktuella riktningen.
-                if (!visited[neighbor] &&
-                    !tile->hasWall(static_cast<Wall>(
-                        dir.first == -1 ? Wall::NORTH :
-                        dir.first == 1 ? Wall::SOUTH :
-                        dir.second == 1 ? Wall::EAST : Wall::WEST)))
-                {
-                    visited[neighbor] = true;  // Markera grannen som besökt.
-                    parent[neighbor] = tile;  // Spara varifrån vi kom.
-                    toVisit.push(neighbor);  // Lägg grannen i kön.
-
-                    // Kontrollera om vi har nått destinationen.
-                    if (neighbor == destination)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    // Om destinationen hittades, rekonstruera vägen.
-    if (found)
-    {
-        Tile* step = destination;  // Börja från destinationen.
-        while (step != nullptr)  // Backtracka tills vi når startpunkten.
-        {
-            pathToTarget.push_back(step);  // Lägg till rutan i vägen.
-            step = parent[step];  // Gå till föräldern.
-        }
-        std::reverse(pathToTarget.begin(), pathToTarget.end());  // Vänd vägen så att den går från start → mål.
-    }
-}
-
-
 void Firefighter::move(const Tile* destination)
 {  
     lastTile = currentTile;
     currentTile = grid[destination->getRow()][destination->getColumn()];
     String msg = "Firefighter from " + String(lastTile->getRow()) + " " + String(lastTile->getColumn()) + " to " + currentTile->getRow() + " " + currentTile->getColumn();
     messagesToBridge.push(msg);
-}
-
-
-bool Firefighter::checkForEvent(Tile* tile, Event event)
-{ 
-    bool hasEvent = false;
-
-    if (tile->hasEvent(event))
-    {
-        targetTile = tile;
-        hasEvent = true;
-    }    
-    else if (!tile->hasWall(Wall::NORTH) && grid[tile->getRow() - 1][tile->getColumn()]->hasEvent(event))
-    {
-        targetTile = grid[tile->getRow() - 1][tile->getColumn()];
-        hasEvent = true; 
-    }
-    else if (!tile->hasWall(Wall::EAST) && grid[tile->getRow()][tile->getColumn() + 1]->hasEvent(event))
-    {
-        targetTile = grid[tile->getRow()][tile->getColumn() + 1];
-        hasEvent = true;
-    }
-    else if(!tile->hasWall(Wall::SOUTH) && grid[tile->getRow() + 1][tile->getColumn()]->hasEvent(event))
-    {
-        targetTile = grid[tile->getRow() + 1][tile->getColumn()];
-        hasEvent = true;
-    }
-    else if (!tile->hasWall(Wall::WEST) && grid[tile->getRow()][tile->getColumn() - 1]->hasEvent(event))
-    {
-        targetTile = grid[tile->getRow()][tile->getColumn() - 1];
-        hasEvent = true;
-    }
-
-  return hasEvent;
 }
 
 void Firefighter::changeState()
@@ -189,33 +81,6 @@ void Firefighter::changeState()
       //printToDisplay("Goes to searching");
       state = State::SEARCHING;
     }
-}
-
-bool Firefighter::atDeadEnd()
-{
-    int walls = 0;
-
-    if(currentTile->hasWall(Wall::NORTH))
-    {
-        walls++;
-    }
-    if(currentTile->hasWall(Wall::EAST))
-    {
-        walls++;
-    }
-    if(currentTile->hasWall(Wall::SOUTH))
-    {
-        walls++;
-    }
-    if(currentTile->hasWall(Wall::WEST))
-    {
-        walls++;
-    }
-    if (walls == 3)
-    {
-        return true;
-    } 
-    return false;
 }
 
 void Firefighter::searchForTarget()
@@ -463,79 +328,6 @@ void Firefighter::Tick()
             wait();
             break;                 
     }
-}
-
-void Firefighter::addWalls()
-{
-    grid[0][0]->addWall(Wall::NORTH);
-    grid[0][0]->addWall(Wall::WEST);
-    grid[1][0]->addWall(Wall::WEST);
-    grid[2][0]->addWall(Wall::WEST);
-    grid[2][0]->addWall(Wall::SOUTH);
-    grid[3][0]->addWall(Wall::WEST);
-    grid[3][0]->addWall(Wall::NORTH);
-    grid[4][0]->addWall(Wall::WEST);
-    grid[5][0]->addWall(Wall::WEST);
-    grid[5][0]->addWall(Wall::SOUTH);
-    grid[5][0]->addWall(Wall::EAST);
-    grid[0][1]->addWall(Wall::NORTH);
-    grid[2][1]->addWall(Wall::SOUTH);
-    grid[3][1]->addWall(Wall::NORTH);
-    grid[4][1]->addWall(Wall::SOUTH);
-    grid[4][1]->addWall(Wall::EAST);
-    grid[5][1]->addWall(Wall::SOUTH);
-    grid[5][1]->addWall(Wall::WEST);
-    grid[5][1]->addWall(Wall::NORTH);
-    grid[0][2]->addWall(Wall::NORTH);
-    grid[0][2]->addWall(Wall::EAST);
-    grid[2][2]->addWall(Wall::EAST);
-    grid[4][2]->addWall(Wall::EAST);
-    grid[4][2]->addWall(Wall::WEST);
-    grid[5][2]->addWall(Wall::SOUTH);
-    grid[0][3]->addWall(Wall::WEST);
-    grid[0][3]->addWall(Wall::EAST);
-    grid[0][3]->addWall(Wall::NORTH);
-    grid[2][3]->addWall(Wall::WEST);
-    grid[2][3]->addWall(Wall::EAST);
-    grid[4][3]->addWall(Wall::SOUTH);
-    grid[4][3]->addWall(Wall::WEST);
-    grid[4][3]->addWall(Wall::EAST);
-    grid[5][3]->addWall(Wall::SOUTH);
-    grid[5][3]->addWall(Wall::EAST);
-    grid[5][3]->addWall(Wall::NORTH);
-    grid[0][4]->addWall(Wall::NORTH);
-    grid[0][4]->addWall(Wall::WEST);
-    grid[2][4]->addWall(Wall::WEST);
-    grid[4][4]->addWall(Wall::WEST);
-    grid[4][4]->addWall(Wall::SOUTH);
-    grid[5][4]->addWall(Wall::EAST);
-    grid[5][4]->addWall(Wall::SOUTH);
-    grid[5][4]->addWall(Wall::WEST);
-    grid[0][5]->addWall(Wall::NORTH);
-    grid[5][5]->addWall(Wall::WEST);
-    grid[5][5]->addWall(Wall::EAST);
-    grid[5][5]->addWall(Wall::SOUTH);
-    grid[0][6]->addWall(Wall::NORTH);
-    grid[1][6]->addWall(Wall::EAST);
-    grid[2][6]->addWall(Wall::EAST);
-    grid[5][6]->addWall(Wall::EAST);
-    grid[5][6]->addWall(Wall::SOUTH);
-    grid[5][6]->addWall(Wall::WEST);
-    grid[0][7]->addWall(Wall::NORTH);
-    grid[0][7]->addWall(Wall::EAST);
-    grid[0][7]->addWall(Wall::WEST);
-    grid[1][7]->addWall(Wall::EAST);
-    grid[1][7]->addWall(Wall::SOUTH);
-    grid[2][7]->addWall(Wall::NORTH);
-    grid[2][7]->addWall(Wall::EAST);
-    grid[2][7]->addWall(Wall::WEST);
-    grid[3][7]->addWall(Wall::SOUTH);
-    grid[3][7]->addWall(Wall::EAST);
-    grid[4][7]->addWall(Wall::NORTH);
-    grid[4][7]->addWall(Wall::EAST);
-    grid[5][7]->addWall(Wall::EAST);
-    grid[5][7]->addWall(Wall::SOUTH);
-    grid[5][7]->addWall(Wall::WEST);
 }
 
 Firefighter::~Firefighter() {

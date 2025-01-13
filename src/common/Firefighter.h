@@ -69,6 +69,7 @@ class Firefighter
         void enqueueMeshOutput(const Message& msg);
         void handleHelpRequest(uint32_t from, int row, int column);
         void handlePositions(uint32_t from, int row, int column);
+        void reset();
         bool ChangeState(Tile* tile);
         bool tryParseInt(const String& str, int& outValue);  
         vector<String> tokenize(const String& expression);

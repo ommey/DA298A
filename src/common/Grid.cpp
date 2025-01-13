@@ -10,8 +10,8 @@ Grid::Grid()
             grid[row][col] = new Tile(row, col);
         }
     }
-    this->currentTile = grid[3][3];  
-    this->lastTile = grid[3][3];
+    this->currentTile = grid[0][3];
+    this->lastTile = grid[1][3];
     this->targetTile = grid[0][0];
     this->exitTile = grid[0][3];
     
@@ -22,7 +22,7 @@ void Grid::update(String event, int row, int column)
 {
     if (row < 0 || row >= 6 || column < 0 || column >= 8) 
     {
-    return; // Ignorera ogiltiga positioner
+        return; 
     }
 
     if (event == "Fire")
@@ -241,6 +241,10 @@ void Grid::bfsTo(Tile* destination)
         }
         std::reverse(pathToTarget.begin(), pathToTarget.end());  // Vänd vägen så att den går från start → mål.
     }
+    else 
+    {
+       Serial.println("Path not found"); 
+    }
 }
 
 void Grid::addWalls()
@@ -315,4 +319,3 @@ void Grid::addWalls()
     grid[5][7]->addWall(Wall::SOUTH);
     grid[5][7]->addWall(Wall::WEST);
 }
-

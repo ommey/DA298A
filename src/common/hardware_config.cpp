@@ -16,7 +16,7 @@ void hardwareInit() {
 
     // Init display
     tft.init();
-    tft.setRotation(0);
+    tft.setRotation(1);
     tft.fillScreen(TFT_BLUE);
     tft.setTextColor(TFT_WHITE, TFT_BLUE);
     tft.setTextSize(2);
@@ -40,9 +40,9 @@ void clearDisplay() {
     tft.fillScreen(TFT_BLUE);
 }
 
-void setLEDColor(uint8_t r, uint8_t g, uint8_t b) {
+void setLEDColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
     // Not implemented yet
-    RGB_LED.setPixelColor(0, RGB_LED.Color(r, g, b));
+    RGB_LED.setPixelColor(0, RGB_LED.Color(g, r, b, w));
     RGB_LED.show();
 }
 

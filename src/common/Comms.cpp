@@ -19,7 +19,7 @@ Comms::Comms(Firefighter* firefighter) : firefighter(firefighter), meshOutputQue
     
     mesh.onChangedConnections([this]() 
     {
-        this->firefighter->nbrExpectedAnswers = mesh.getNodeList().size()-2;
+        this->firefighter->nbrExpectedAnswers = mesh.getNodeList().size()-1;
     });
 
     mesh.onDroppedConnection([this](size_t nodeId) 

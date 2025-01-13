@@ -43,7 +43,6 @@ class Firefighter
         random_device rd;
         uniform_int_distribution<> dist;
         QueueHandle_t* meshOutPutQueue;
-        Grid grid;
         vector<uint32_t> teamMembers;
         bool hasMission;
         bool teamArrived;
@@ -73,6 +72,7 @@ class Firefighter
         vector<String> tokenize(const String& expression);
 
     public: 
+        Grid grid;
         uint32_t bridgeName = 533097877;
         uint32_t leaderID = 0; 
         vector<pair<uint32_t, float>> positionsList; // Map of node IDs to their positions

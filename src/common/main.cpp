@@ -74,6 +74,7 @@ static void buttonHandlerTask(void* p)
     setLEDOff(); 
     firefighter.pendingHelp = false;
     firefighter.tickCounter = 0;
+    printDirection(firefighter.grid.currentTile->getRow(), firefighter.grid.currentTile->getColumn(), firefighter.grid.targetTile->getRow(), firefighter.grid.targetTile->getColumn());
   } 
   vTaskDelay(50 / portTICK_PERIOD_MS); 
   }

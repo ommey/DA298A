@@ -194,7 +194,7 @@ void Firefighter::wait()
         setLEDOff();
         state = State::RESCUING_PERSON;
     }
-    else if (nbrFirefighters == 2) 
+    else if (nbrFirefighters == 1) 
     {
         for(uint32_t member : teamMembers)
         {
@@ -421,10 +421,11 @@ void Firefighter::handlePositions(uint32_t from, int row, int column)
     
     positionListCounter = 0;
     
-    for (positionListCounter; positionListCounter < 2; positionListCounter++) 
+    for (positionListCounter; positionListCounter < 1; positionListCounter++) 
     {
-      string messageContent = "Help " + to_string(grid.targetTile->getRow()) + ' ' + to_string(grid.targetTile->getColumn());
-      enqueueMeshOutput(Message(positionsList[positionListCounter].first, messageContent.c_str()));
+        printToDisplay("Sending help message to " + String(positionsList[positionListCounter].first));
+        string messageContent = "Help " + to_string(grid.targetTile->getRow()) + ' ' + to_string(grid.targetTile->getColumn());
+        enqueueMeshOutput(Message(positionsList[positionListCounter].first, messageContent.c_str()));
     }
   }
 }

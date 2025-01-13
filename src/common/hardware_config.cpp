@@ -36,6 +36,35 @@ void printToDisplay(const String& message, int x, int y) {
     tft.print(message);
 }
 
+void printDirection(int fromX, int fromY, int toX, int toY) {
+    if (fromX < toX && fromY < toY) {
+        // sydöst
+        tft.drawTriangle(150, 150, 170, 170, 130, 170, TFT_WHITE); 
+    } else if (fromX < toX && fromY > toY) {
+        // sydväst
+        tft.drawTriangle(150, 150, 170, 130, 170, 170, TFT_WHITE); 
+    } else if (fromX > toX && fromY < toY) {
+        // nordöst
+        tft.drawTriangle(150, 150, 130, 170, 130, 130, TFT_WHITE); 
+    } else if (fromX > toX && fromY > toY) {
+        // nordväst
+        tft.drawTriangle(150, 150, 130, 130, 170, 130, TFT_WHITE); 
+    } else if (fromX == toX && fromY < toY) {
+        // öster
+        tft.drawTriangle(150, 150, 130, 170, 170, 170, TFT_WHITE); 
+    } else if (fromX == toX && fromY > toY) {
+        // väster
+        tft.drawTriangle(150, 150, 130, 130, 170, 130, TFT_WHITE); 
+    } else if (fromX < toX && fromY == toY) {
+        // söder
+        tft.drawTriangle(150, 150, 170, 170, 130, 170, TFT_WHITE); 
+    } else if (fromX > toX && fromY == toY) {
+        // norr
+        tft.drawTriangle(150, 150, 130, 130, 170, 130, TFT_WHITE); 
+    } 
+}
+
+
 void clearDisplay() {
     tft.fillScreen(TFT_BLUE);
 }

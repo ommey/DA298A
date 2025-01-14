@@ -23,7 +23,6 @@ class Comms
         const unsigned long DEBOUNCE_DELAY = 1000; // Debounce delay in milliseconds
 
     public:
-
         Comms(Firefighter* firefighter);
         ~Comms();
 

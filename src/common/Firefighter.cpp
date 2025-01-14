@@ -7,8 +7,8 @@ Firefighter::Firefighter() : gen(esp_random()), dist(1, 4)
 
 void Firefighter::move(const Tile* destination)
 {  
-    grid.currentTile = grid.getTile(destination->getRow(), destination->getColumn());
     grid.lastTile = grid.currentTile;
+    grid.currentTile = grid.getTile(destination->getRow(), destination->getColumn());
     string messageContent = "Firefighter from " + to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) + " to " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
     enqueueMeshOutput(Message(bridgeName, messageContent.c_str())); 
 }
@@ -48,11 +48,11 @@ void Firefighter::searchForTarget()
 {
     if (grid.atDeadEnd())
     {      
-        string messageContent = "Firefighter from " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn()) + " to " + to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) ;
-        enqueueMeshOutput(Message(bridgeName, messageContent.c_str()));    
+        string messageContent = "Firefighter from " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn()) + " to " + to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn());
+        enqueueMeshOutput(Message(bridgeName, messageContent.c_str()));
         int last_row = grid.currentTile->getRow();
         int last_col = grid.currentTile->getColumn();
-        grid.currentTile = grid.lastTile; 
+        grid.currentTile = grid.lastTile;
         grid.lastTile = grid.getTile(last_row, last_col);
     }
     else 
@@ -398,7 +398,7 @@ void Firefighter::handlePositions(uint32_t from, int row, int column)
     sort(positionsList.begin(), positionsList.end(),
     [](const pair<uint32_t, float>& a, const pair<uint32_t, float>& b) 
     {
-      return a.second > b.second; // Compare by distance
+      return a.second < b.second; // Compare by distance
     });
     
     positionListCounter = 0;
@@ -414,13 +414,19 @@ void Firefighter::handlePositions(uint32_t from, int row, int column)
 
 void Firefighter::handleHelpRequest(uint32_t from, int row, int column)
 {
-  leaderID = from;  
-  setLEDColor(255, 200, 0, 0);  // Gul hjälpfärg
-  printToDisplay("Help request recieved");
-  missionTargetRow = row;
-  missionTargetColumn = column;
-  tickCounter = 0;
-  pendingHelp = true;
+    if (state == State::VICTIM) {
+        enqueueMeshOutput(Message(from, "No")); 
+        pendingHelp = false;
+        tickCounter = 0;
+    } else {
+        leaderID = from;  
+        setLEDColor(255, 200, 0, 0);  // Gul hjälpfärg
+        printToDisplay("Help request recieved");
+        missionTargetRow = row;
+        missionTargetColumn = column;
+        tickCounter = 0;
+        pendingHelp = true;
+    }
 }
         
 void Firefighter::Tick() 

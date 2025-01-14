@@ -207,7 +207,7 @@ void Firefighter::startMission()
         enqueueMeshOutput(Message(0, "Hazmat " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn()));
     }
     grid.targetTile = grid.getTile(missionTargetRow, missionTargetColumn);
-    grid.getTile(missionTargetRow, missionTargetColumn)->addEvent(Event::VICTIM);
+    grid.targetTile->addEvent(Event::VICTIM);
     hasMission = true;
     grid.pathToTarget.clear();
     state = State::MOVING_TO_TARGET;

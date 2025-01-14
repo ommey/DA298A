@@ -7,11 +7,10 @@ Firefighter::Firefighter() : gen(esp_random()), dist(1, 4)
 
 void Firefighter::move(const Tile* destination)
 {  
-    string messageContent = "Firefighter from " + to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) + " to " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
-    enqueueMeshOutput(Message(bridgeName, messageContent.c_str())); 
-    //flyttade från första rad till sista
     grid.currentTile = grid.getTile(destination->getRow(), destination->getColumn());
     grid.lastTile = grid.currentTile;
+    string messageContent = "Firefighter from " + to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) + " to " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
+    enqueueMeshOutput(Message(bridgeName, messageContent.c_str())); 
 }
 
 void Firefighter::changeState()

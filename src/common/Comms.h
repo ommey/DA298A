@@ -17,16 +17,24 @@ class Comms
         static void meshUpdate(void* pvParameters);
         static void meshWriteTask(void* pvParameters);
 
+        static void serialWriteTask(void* pvParameters);
+        static void serialReadTask(void* pvParameters);
+
+        const unsigned long DEBOUNCE_DELAY = 1000; // Debounce delay in milliseconds
+
     public:
-        QueueHandle_t meshOutputQueue;
 
         Comms(Firefighter* firefighter);
-
         ~Comms();
 
-        void start();
+        QueueHandle_t meshOutputQueue;
+        QueueHandle_t serialOutPutQueue;
 
+        void start();
         void enqueueMeshOutput(const Message& msg);
+        void enqueueSerialOutput(const String& msg);
+
+        static Comms* instance;
 };
 
 #endif

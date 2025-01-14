@@ -14,7 +14,7 @@ Comms::Comms(Firefighter* firefighter) : firefighter(firefighter), meshOutputQue
 
     mesh.onReceive([this](uint32_t from, String &msg) 
     {    
-        this->firefighter->handleMessage(from, msg);
+        this->firefighter->handleMessage(from, msg); 
     });
     
     mesh.onChangedConnections([this]() 
@@ -42,7 +42,7 @@ void Comms::meshWriteTask(void *pvParameters)
     Comms* comms = static_cast<Comms*>(pvParameters);
     Message message; 
     while (1) 
-    {        
+    {
         if (xQueueReceive(comms->meshOutputQueue, &message, 10) == pdPASS) 
         {
             if (message.from == 0 && message.sendToBridge)

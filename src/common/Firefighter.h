@@ -59,7 +59,7 @@ class Firefighter
         void moveHazmat();
         void rescuePerson();
         void move(const Tile* destination);
-        void Die(int row, int column);
+        void fireStrike(int row, int column);
         void wait();
         void TeamArrived();
         void changeState();

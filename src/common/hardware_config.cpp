@@ -39,30 +39,31 @@ void printToDisplay(const String& message, int x, int y) {
 void printDirection(int fromX, int fromY, int toX, int toY) {
     if (fromX < toX && fromY < toY) {
         // sydöst
-        tft.drawTriangle(150, 150, 170, 170, 130, 170, TFT_WHITE); 
+        tft.drawTriangle(280, 200, 170, 80, 240, 40, TFT_WHITE); 
     } else if (fromX < toX && fromY > toY) {
         // sydväst
-        tft.drawTriangle(150, 150, 170, 130, 170, 170, TFT_WHITE); 
+        tft.drawTriangle(170, 200, 200, 40, 260, 80, TFT_WHITE); 
     } else if (fromX > toX && fromY < toY) {
         // nordöst
-        tft.drawTriangle(150, 150, 130, 170, 130, 130, TFT_WHITE); 
+        tft.drawTriangle(280, 40, 240, 200, 170, 170, TFT_WHITE); 
     } else if (fromX > toX && fromY > toY) {
         // nordväst
-        tft.drawTriangle(150, 150, 130, 130, 170, 130, TFT_WHITE); 
+        tft.drawTriangle(170, 40, 240, 200, 280, 170, TFT_WHITE); 
     } else if (fromX == toX && fromY < toY) {
         // öster
-        tft.drawTriangle(150, 150, 130, 170, 170, 170, TFT_WHITE); 
+        tft.drawTriangle(280, 120, 120, 80, 120, 160, TFT_WHITE); 
     } else if (fromX == toX && fromY > toY) {
         // väster
-        tft.drawTriangle(150, 150, 130, 130, 170, 130, TFT_WHITE); 
+        tft.drawTriangle(120, 120, 280, 160, 280, 80, TFT_WHITE); 
     } else if (fromX < toX && fromY == toY) {
         // söder
-        tft.drawTriangle(150, 150, 170, 170, 130, 170, TFT_WHITE); 
+        tft.drawTriangle(240, 200, 200, 40, 280, 40, TFT_WHITE); 
     } else if (fromX > toX && fromY == toY) {
         // norr
-        tft.drawTriangle(150, 150, 130, 130, 170, 130, TFT_WHITE); 
+        tft.drawTriangle(240, 40, 200, 200, 280, 200, TFT_WHITE); 
     } 
 }
+
 
 
 void clearDisplay() {

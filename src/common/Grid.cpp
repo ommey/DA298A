@@ -289,7 +289,6 @@ void Grid::addWalls()
     grid[0][4]->addWall(Wall::WEST);
     grid[2][4]->addWall(Wall::WEST);
     grid[4][4]->addWall(Wall::WEST);
-    grid[4][4]->addWall(Wall::SOUTH);
     grid[5][4]->addWall(Wall::EAST);
     grid[5][4]->addWall(Wall::SOUTH);
     grid[5][4]->addWall(Wall::WEST);

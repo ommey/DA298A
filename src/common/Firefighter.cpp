@@ -255,6 +255,13 @@ void Firefighter::handleMessage(uint32_t from, String msg)
     {
         Tick();
     }
+    else if (tokens[0] == "Release") 
+    {
+        setLEDOff();
+        grid.currentTile->removeEvent(Event::VICTIM);
+        grid.targetTile->removeEvent(Event::VICTIM);
+        state = State::SEARCHING;
+    }
     else if (tokens[0] == "ReqPos") 
     {
         string messageContent = "Pos " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
@@ -397,6 +404,10 @@ bool Firefighter::tryParseInt(const String& str, int& outValue)
 
 void Firefighter::handlePositions(uint32_t from, int row, int column) 
 {
+    if (row == grid.targetTile->getRow() && column == grid.targetTile->getColumn())
+    {
+        enqueueMeshOutput(Message(from, "Release"));
+    }
     float dis = sqrt(pow(row-grid.targetTile->getRow(),2)+pow(column-grid.targetTile->getColumn(),2));
     positionsList.push_back({from, dis}); // Spara nodens position i positionsList
     if (positionsList.size() == nbrExpectedAnswers) //Check if all nodes anwsered, if true, start sorting

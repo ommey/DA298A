@@ -15,8 +15,9 @@ Comms::Comms(Firefighter *firefighter) : firefighter(firefighter), meshOutputQue
     mesh.onReceive([this](uint32_t from, String &msg) 
     {    
         this->firefighter->handleMessage(from, msg); 
+        this->enqueueSerialOutput("Received message from: " + String(from) + " with content: " + msg);
     });
-    
+
     mesh.onChangedConnections([this]() 
     {
         this->firefighter->nbrExpectedAnswers = mesh.getNodeList().size()-1;

@@ -4,9 +4,9 @@
 #include <TFT_eSPI.h>
 #include <Adafruit_NeoPixel.h>
 
-#define BUTTON_1 GPIO_NUM_22
-#define BUTTON_2 GPIO_NUM_32
-#define BUTTON_3 GPIO_NUM_33
+#define BUTTON_1 GPIO_NUM_34
+#define BUTTON_2 GPIO_NUM_35
+#define BUTTON_3 GPIO_NUM_32
 #define LED_RGB GPIO_NUM_23
 
 extern TFT_eSPI tft;

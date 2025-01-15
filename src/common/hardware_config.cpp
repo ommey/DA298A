@@ -6,9 +6,9 @@ Adafruit_NeoPixel RGB_LED = Adafruit_NeoPixel(1, LED_RGB, NEO_GRB + NEO_KHZ800);
 void hardwareInit() 
 {
     // Ställ in knapparna som ingångar med pullup
-    pinMode(BUTTON_1, INPUT_PULLUP);
-    pinMode(BUTTON_2, INPUT_PULLUP);
-    pinMode(BUTTON_3, INPUT_PULLUP);
+    pinMode(BUTTON_1, INPUT);
+    pinMode(BUTTON_2, INPUT);
+    pinMode(BUTTON_3, INPUT);
 
     // Ställ in RGB-LED som utgång
     RGB_LED.begin();

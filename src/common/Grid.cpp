@@ -1,6 +1,6 @@
 #include "Grid.h"
 
-Grid::Grid()
+Grid::Grid() 
 {
     // Allokera minne för varje Tile och spara pekarna i grid
     for (int row = 0; row < 6; ++row)
@@ -10,86 +10,57 @@ Grid::Grid()
             grid[row][col] = new Tile(row, col);
         }
     }
-    this->currentTile = grid[3][3];  
-    this->lastTile = grid[3][3];
+    this->currentTile = grid[0][3];
+    this->lastTile = grid[1][3];
     this->targetTile = grid[0][0];
-    this->exitTile = grid[0][0];  
+    this->exitTile = grid[0][3];
     
-    Serial.println("Grid constructor: Initializing...");
-   
+    addWalls();
 }
 
-void Grid::update(String event, int row, int column)
+void Grid::update(String event, int row, int column) 
 {
-    if (row < 0 || row >= 6 || column < 0 || column >= 8) 
-    {
-    return; // Ignorera ogiltiga positioner
-    }
+    if (row < 0 || row >= 6 || column < 0 || column >= 8) { return; }
 
-    if (event == "Fire")
-    {
-        grid[row][column]->addEvent(Event::FIRE);
-    }
-    else if (event == "Smoke")
-    {
-        grid[row][column]->addEvent(Event::SMOKE);
-    }
-    else if (event == "Victim")
-    {
-        grid[row][column]->addEvent(Event::VICTIM);
-    }
-    else if (event == "Hazmat")
-    {
-        grid[row][column]->addEvent(Event::HAZMAT);
-    } 
-    else if (event == "RemoveVictim")
-    {
-        grid[row][column]->removeEvent(Event::VICTIM);
-    }
-    else if (event == "RemoveHazmat")
-    {
-        grid[row][column]->removeEvent(Event::HAZMAT);
-    } 
+    if (event == "Fire") { grid[row][column]->addEvent(Event::FIRE); }
+
+    else if (event == "Smoke") { grid[row][column]->addEvent(Event::SMOKE); }
+    
+    else if (event == "Victim") { grid[row][column]->addEvent(Event::VICTIM); }
+    
+    else if (event == "Hazmat") { grid[row][column]->addEvent(Event::HAZMAT); } 
+    
+    else if (event == "RemoveVictim") { grid[row][column]->removeEvent(Event::VICTIM); }
+    
+    else if (event == "RemoveHazmat") { grid[row][column]->removeEvent(Event::HAZMAT); }
 }
 
 Grid::~Grid() 
-{    
-    for (int row = 0; row < 6; ++row) {
-        for (int col = 0; col < 8; ++col) {
+{
+    for (int row = 0; row < 6; ++row) 
+    {
+        for (int col = 0; col < 8; ++col) 
+        {
             delete grid[row][col]; // Frigör varje dynamiskt allokerad Tile
             grid[row][col] = nullptr; // Bra vana att nullställa pekare
         }
     }
 }
 
-bool Grid::atDeadEnd()
+bool Grid::atDeadEnd() 
 {
     int walls = 0;
 
-    if(currentTile->hasWall(Wall::NORTH))
-    {
-        walls++;
-    }
-    if(currentTile->hasWall(Wall::EAST))
-    {
-        walls++;
-    }
-    if(currentTile->hasWall(Wall::SOUTH))
-    {
-        walls++;
-    }
-    if(currentTile->hasWall(Wall::WEST))
-    {
-        walls++;
-    }
-    if (walls == 3)
-    {
-        return true;
-    } 
-    return false;
+    if(currentTile->hasWall(Wall::NORTH)) { walls++; }
+    if(currentTile->hasWall(Wall::EAST)) { walls++; }
+    if(currentTile->hasWall(Wall::SOUTH)) { walls++; }
+    if(currentTile->hasWall(Wall::WEST)) { walls++; }
+    
+    if (walls == 3) { return true; }
+    return false; 
 }
 
-bool Grid::getNextTile(int direction, Tile*& nextTile)
+bool Grid::getNextTile(int direction, Tile*& nextTile) 
 {
     if (direction == 1 && !currentTile->hasWall(Wall::NORTH) && currentTile->getRow() > 0 
     && !grid[currentTile->getRow() - 1][currentTile->getColumn()]->hasEvent(Event::FIRE) 
@@ -125,48 +96,42 @@ bool Grid::getNextTile(int direction, Tile*& nextTile)
     }
 }
 
-bool Grid::checkForEvent(Event event)
-{ 
+bool Grid::checkForEvent(Event event) 
+{
     bool hasEvent = false;
 
-    if (currentTile->hasEvent(event))
+    if (currentTile->hasEvent(event)) 
     {
         targetTile = currentTile;
         hasEvent = true;
-    }    
-    else if (!currentTile->hasWall(Wall::NORTH) && grid[currentTile->getRow() - 1][currentTile->getColumn()]->hasEvent(event))
+    }
+    else if (!currentTile->hasWall(Wall::NORTH) && grid[currentTile->getRow() - 1][currentTile->getColumn()]->hasEvent(event)) 
     {
         targetTile = grid[currentTile->getRow() - 1][currentTile->getColumn()];
-        hasEvent = true; 
+        hasEvent = true;
     }
-    else if (!currentTile->hasWall(Wall::EAST) && grid[currentTile->getRow()][currentTile->getColumn() + 1]->hasEvent(event))
+    else if (!currentTile->hasWall(Wall::EAST) && grid[currentTile->getRow()][currentTile->getColumn() + 1]->hasEvent(event)) 
     {
         targetTile = grid[currentTile->getRow()][currentTile->getColumn() + 1];
         hasEvent = true;
     }
-    else if(!currentTile->hasWall(Wall::SOUTH) && grid[currentTile->getRow() + 1][currentTile->getColumn()]->hasEvent(event))
+    else if(!currentTile->hasWall(Wall::SOUTH) && grid[currentTile->getRow() + 1][currentTile->getColumn()]->hasEvent(event)) 
     {
         targetTile = grid[currentTile->getRow() + 1][currentTile->getColumn()];
         hasEvent = true;
     }
-    else if (!currentTile->hasWall(Wall::WEST) && grid[currentTile->getRow()][currentTile->getColumn() - 1]->hasEvent(event))
+    else if (!currentTile->hasWall(Wall::WEST) && grid[currentTile->getRow()][currentTile->getColumn() - 1]->hasEvent(event)) 
     {
         targetTile = grid[currentTile->getRow()][currentTile->getColumn() - 1];
         hasEvent = true;
     }
-
-  return hasEvent;
+    return hasEvent;
 }
 
-Tile*& Grid::getTile(int row, int column)
-{
-    return grid[row][column];
-}
+Tile*& Grid::getTile(int row, int column) { return grid[row][column]; }
 
-void Grid::bfsTo(Tile* destination)
+void Grid::bfsTo(Tile* destination) 
 {
-    if (currentTile == destination) return;  // Om vi redan är vid målet, gör ingenting.
-
     std::queue<Tile*> toVisit;  // BFS-kö för att hålla reda på vilka rutor som ska utforskas.
     std::unordered_map<Tile*, Tile*> parent;  // För att återskapa vägen från destination tillbaka till start.
     std::unordered_map<Tile*, bool> visited;  // Markera vilka rutor vi har besökt.
@@ -179,15 +144,19 @@ void Grid::bfsTo(Tile* destination)
 
     bool found = false;  // Flagga för att hålla koll på om destinationen har hittats.
 
-    while (!toVisit.empty() && !found)
+    int maxIterations = 1000; // Max antal iterationer för att undvika oändliga loopar
+    int iterations = 0;
+
+    while (!toVisit.empty() && !found && iterations < maxIterations) 
     {
+        iterations++;
+
         Tile* tile = toVisit.front();  // Hämta den första rutan i kön.
         toVisit.pop();  // Ta bort rutan från kön.
 
         // Definiera möjliga riktningar: NORTH, EAST, SOUTH, WEST.
-        std::vector<std::pair<int, int>> directions = {
-            {-1, 0}, {0, 1}, {1, 0}, {0, -1}  // (-1,0)=NORTH, (0,1)=EAST, (1,0)=SOUTH, (0,-1)=WEST.
-        };
+        // (-1,0)=NORTH, (0,1)=EAST, (1,0)=SOUTH, (0,-1)=WEST.
+        std::vector<std::pair<int, int>> directions = { {-1, 0}, {0, 1}, {1, 0}, {0, -1} };
 
         for (auto& dir : directions)  // Gå igenom alla riktningar.
         {
@@ -195,9 +164,12 @@ void Grid::bfsTo(Tile* destination)
             int newCol = tile->getColumn() + dir.second;  // Beräkna ny kolumn.
 
             // Kontrollera att den nya positionen är inom rutnätets gränser.
-            if (newRow >= 0 && newRow < 6 && newCol >= 0 && newCol < 8)
+            if (newRow >= 0 && newRow < 6 && newCol >= 0 && newCol < 8) 
             {
-                Tile* neighbor = getTile(newRow, newCol);  // Hämta grannen från rutnätet.
+                Tile* neighbor = getTile(newRow, newCol); // Hämta grannen från rutnätet.
+
+                // Kontrollera att grannen existerar
+                if (!neighbor) continue;
 
                 // Kontrollera att grannen:
                 // 1. Inte är besökt.
@@ -206,14 +178,14 @@ void Grid::bfsTo(Tile* destination)
                     !tile->hasWall(static_cast<Wall>(
                         dir.first == -1 ? Wall::NORTH :
                         dir.first == 1 ? Wall::SOUTH :
-                        dir.second == 1 ? Wall::EAST : Wall::WEST)))
+                        dir.second == 1 ? Wall::EAST : Wall::WEST))) 
                 {
                     visited[neighbor] = true;  // Markera grannen som besökt.
                     parent[neighbor] = tile;  // Spara varifrån vi kom.
                     toVisit.push(neighbor);  // Lägg grannen i kön.
 
                     // Kontrollera om vi har nått destinationen.
-                    if (neighbor == destination)
+                    if (neighbor == destination) 
                     {
                         found = true;
                         break;
@@ -222,8 +194,12 @@ void Grid::bfsTo(Tile* destination)
             }
         }
     }
+
+    // Kontrollera om maxgränsen för iterationer nåddes
+    if (iterations >= maxIterations) { return; }
+
     // Om destinationen hittades, rekonstruera vägen.
-    if (found)
+    if (found) 
     {
         Tile* step = destination;  // Börja från destinationen.
         while (step != nullptr)  // Backtracka tills vi når startpunkten.
@@ -233,9 +209,13 @@ void Grid::bfsTo(Tile* destination)
         }
         std::reverse(pathToTarget.begin(), pathToTarget.end());  // Vänd vägen så att den går från start → mål.
     }
+    else
+    {
+       Serial.println("Path not found");
+    }
 }
 
-void Grid::addWalls()
+void Grid::addWalls() 
 {
     grid[0][0]->addWall(Wall::NORTH);
     grid[0][0]->addWall(Wall::WEST);
@@ -277,7 +257,6 @@ void Grid::addWalls()
     grid[0][4]->addWall(Wall::WEST);
     grid[2][4]->addWall(Wall::WEST);
     grid[4][4]->addWall(Wall::WEST);
-    grid[4][4]->addWall(Wall::SOUTH);
     grid[5][4]->addWall(Wall::EAST);
     grid[5][4]->addWall(Wall::SOUTH);
     grid[5][4]->addWall(Wall::WEST);
@@ -307,4 +286,3 @@ void Grid::addWalls()
     grid[5][7]->addWall(Wall::SOUTH);
     grid[5][7]->addWall(Wall::WEST);
 }
-

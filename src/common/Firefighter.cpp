@@ -1,66 +1,64 @@
 #include "Firefighter.h"
 
-Firefighter::Firefighter() : gen(esp_random()), dist(1, 4)
-{
-    changeState();
-}
+Firefighter::Firefighter() : gen(esp_random()), dist(1, 4) { changeState(); }
 
-void Firefighter::move(const Tile* destination)
-{  
+void Firefighter::move(const Tile* destination) 
+{
     grid.lastTile = grid.currentTile;
     grid.currentTile = grid.getTile(destination->getRow(), destination->getColumn());
-    String msg = "Firefighter from " + String(grid.lastTile->getRow()) + " " + String(grid.lastTile->getColumn()) + " to " + grid.currentTile->getRow() + " " + grid.currentTile->getColumn();
-    messagesToBridge.push(msg);
+    string messageContent = "Firefighter from " + to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) + " to " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
+    enqueueMeshOutput(Message(bridgeName, messageContent.c_str()));
 }
 
-void Firefighter::changeState()
+void Firefighter::changeState() 
 {
     if (hasMission) 
     {
-      state = State::MOVING_TO_TARGET;
+        state = State::MOVING_TO_TARGET;
     }
     else if (grid.checkForEvent(Event::VICTIM))
     {
-      String msg = "RemoveVictim " + String(grid.targetTile->getRow()) + " " + String(grid.targetTile->getColumn());
-      messagesToBroadcast.push(msg);
-      state = State::MOVING_TO_TARGET; 
+        string messageContent = "RemoveVictim " + to_string(grid.targetTile->getRow()) + " " + to_string(grid.targetTile->getColumn());
+        enqueueMeshOutput(Message(0, messageContent.c_str()));
+        leaderID = 0;
+        state = State::MOVING_TO_TARGET;
+    }
+    else if (grid.checkForEvent(Event::HAZMAT)) 
+    {
+        state = State::MOVING_HAZMAT;
     }
     else if (grid.checkForEvent(Event::FIRE)) 
     {
-      state = State::PUTTING_OUT_FIRE;
-    } 
-    else if (grid.checkForEvent(Event::SMOKE))
+        state = State::PUTTING_OUT_FIRE;
+    }
+    else if (grid.checkForEvent(Event::SMOKE)) 
     {
-      state = State::PUTTING_OUT_SMOKE;
-    } 
-    else if (grid.checkForEvent(Event::HAZMAT))
-    {
-      state = State::MOVING_HAZMAT;
-    } 
+        state = State::PUTTING_OUT_SMOKE;
+    }
     else 
     {
-      state = State::SEARCHING;
+        state = State::SEARCHING;
     }
 }
 
-void Firefighter::searchForTarget()
+void Firefighter::searchForTarget() 
 {
-    if (grid.atDeadEnd())
-    {   
-        String msg = "Firefighter from " + String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn()) + " to " + grid.lastTile->getRow() + " " + grid.lastTile->getColumn();
-        messagesToBridge.push(msg);
+    if (grid.atDeadEnd()) 
+    {
+        string messageContent = "Firefighter from " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn()) + " to " + to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn());
+        enqueueMeshOutput(Message(bridgeName, messageContent.c_str()));
         int last_row = grid.currentTile->getRow();
         int last_col = grid.currentTile->getColumn();
-        grid.currentTile = grid.lastTile;   
+        grid.currentTile = grid.lastTile;
         grid.lastTile = grid.getTile(last_row, last_col);
     }
     else 
     {
-        while(true)
+        while(true) 
         {
             int direction = dist(gen);
             Tile* nextTile = nullptr;
-            if (grid.getNextTile(direction, nextTile))
+            if (grid.getNextTile(direction, nextTile)) 
             {
                 move(nextTile);
                 break;
@@ -70,97 +68,108 @@ void Firefighter::searchForTarget()
     changeState();
 }
 
-void Firefighter::moveToTarget()
+void Firefighter::moveToTarget() 
 {
-    if (grid.currentTile != grid.targetTile && pathToTarget.empty())
+    if (grid.currentTile != grid.targetTile && grid.pathToTarget.empty()) 
     {
         grid.bfsTo(grid.targetTile);
+        grid.pathToTarget.erase(grid.pathToTarget.begin());
     }
-    if (grid.currentTile == grid.targetTile)    
-    {         
-        messagesToNode.push(std::make_pair(leaderID, "Arrived"));
-        setLEDColor(255,0,0);
+    if (grid.currentTile != grid.targetTile && !grid.pathToTarget.empty()) 
+    {
+        printDirection(grid.currentTile->getRow(), grid.currentTile->getColumn(), grid.targetTile->getRow(), grid.targetTile->getColumn());
+        move(grid.pathToTarget.front());
+        grid.pathToTarget.erase(grid.pathToTarget.begin());
+    }
+    if (grid.currentTile == grid.targetTile) 
+    {
+        printToDisplay("Arrived at target");
+        if (leaderID != 0) 
+        {
+            enqueueMeshOutput(Message(leaderID, "Arrived"));
+        }
+        setLEDColor(0, 0, 255, 0); // Blå färg
+        grid.pathToTarget.clear();
         state = State::WAITING;
-    } else {
-        move(pathToTarget.front());
-        pathToTarget.erase(pathToTarget.begin());
     }
 }
 
-void Firefighter::extinguishFire()
+void Firefighter::extinguishFire() 
 {
     grid.targetTile->removeEvent(Event::FIRE);
     grid.targetTile->addEvent(Event::SMOKE);
+    string messageContent = "RemoveFire " + to_string(grid.targetTile->getRow()) + " " + to_string(grid.targetTile->getColumn());
+    enqueueMeshOutput(Message(0, messageContent.c_str(), true));
     changeState();
-    String msg = "Fire putout " + String(grid.targetTile->getRow()) + " " + String(grid.targetTile->getColumn());
-    messagesToBridge.push(msg);
-    messagesToBroadcast.push(msg);
 }
 
-void Firefighter::extinguishSmoke()
+void Firefighter::extinguishSmoke() 
 {
     grid.targetTile->removeEvent(Event::SMOKE);
+    string messageContent = "RemoveSmoke " + to_string(grid.targetTile->getRow()) + " " + to_string(grid.targetTile->getColumn());
+    enqueueMeshOutput(Message(0, messageContent.c_str(), true));
     changeState();
-    String msg = "Smoke putout " + String(grid.targetTile->getRow()) + " " + String(grid.targetTile->getColumn());
-    messagesToBridge.push(msg);
-    messagesToBroadcast.push(msg);
 }
 
-void Firefighter::moveHazmat()
+void Firefighter::moveHazmat() 
 {
     // Om brandmannen är vid exitTile med HAZMAT-materialet
-    if (grid.currentTile->hasEvent(Event::HAZMAT) && grid.currentTile == grid.exitTile)
+    if (grid.currentTile->hasEvent(Event::HAZMAT) && grid.currentTile == grid.exitTile) 
     {
         grid.currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT från rutan.
-        messagesToBridge.push("Hazmat saved " + String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn()));
+        string messageContent = "RemoveHazmat " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
+        enqueueMeshOutput(Message(bridgeName, messageContent.c_str(), true));
+        grid.pathToTarget.clear();
         changeState();  // Byt state.
     }
     // Om brandmannen har HAZMAT på sin nuvarande ruta men inte är vid exitTile
-    else if (grid.currentTile->hasEvent(Event::HAZMAT))
+    else if (grid.currentTile->hasEvent(Event::HAZMAT) && !grid.pathToTarget.empty()) 
     {
         grid.currentTile->removeEvent(Event::HAZMAT);  // Ta bort HAZMAT temporärt.
-        Tile* nextStep = pathToTarget.front(); 
-        move(nextStep);
-        String msg = "Hazmat from " + String(grid.lastTile->getRow()) + " " + String(grid.lastTile->getColumn()) + " to " + String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn());
-        messagesToBridge.push(msg);
-        pathToTarget.erase(pathToTarget.begin());
+        move(grid.pathToTarget.front());
+        
+        string messageContent = "Hazmat from " + to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) + " to " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
+        enqueueMeshOutput(Message(bridgeName, messageContent.c_str()));
+        grid.pathToTarget.erase(grid.pathToTarget.begin());
         grid.currentTile->addEvent(Event::HAZMAT);  // Lägg tillbaka HAZMAT på rutan.
+
+        printToDisplay("Moving hazmat");
     }
-    else
+    else 
     {
         move(grid.targetTile);
         grid.bfsTo(grid.exitTile);  // Beräkna kortaste vägen till exitTile.
-        pathToTarget.erase(pathToTarget.begin());  // Ta bort det aktuella steget från vägen.
-        messagesToBroadcast.push("RemoveHazmat " + String(grid.targetTile->getRow()) + " " + String(grid.targetTile->getColumn()));
-
+        grid.pathToTarget.erase(grid.pathToTarget.begin());  // Ta bort det aktuella steget från vägen.
+        string messageContent = "RemoveHazmat " + to_string(grid.targetTile->getRow()) + " " + to_string(grid.targetTile->getColumn());
+        enqueueMeshOutput(Message(0, messageContent.c_str()));
     }
 }
 
-void Firefighter::rescuePerson()
+void Firefighter::rescuePerson() 
 {
-    if (grid.currentTile->hasEvent(Event::VICTIM) && grid.currentTile == grid.exitTile)
+    if (grid.currentTile == grid.exitTile) 
     {
         grid.currentTile->removeEvent(Event::VICTIM);
-        messagesToBridge.push("Victim saved " + String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn()));
+        string messageContent = "RemoveVictim " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
+        enqueueMeshOutput(Message(bridgeName, messageContent.c_str(), true));
         hasMission = false;
         teamArrived = false;
+        grid.pathToTarget.clear();
         changeState();
     }
     // Om brandmannen har ett offer men inte är vid exitTile
-    else if (grid.currentTile->hasEvent(Event::VICTIM))
+    else if (!grid.pathToTarget.empty()) 
     {
-        String msg = "Victim from " + String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn()) + " to ";
         grid.currentTile->removeEvent(Event::VICTIM);
-        Tile* nextStep = pathToTarget.front();  // Hämta nästa steg.
-        move(nextStep);  // Flytta till nästa ruta.
-        pathToTarget.erase(pathToTarget.begin());
+        move(grid.pathToTarget.front());  // Flytta till nästa ruta.
+        grid.pathToTarget.erase(grid.pathToTarget.begin());
         grid.currentTile->addEvent(Event::VICTIM);
-        msg += String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn());
-        messagesToBridge.push(msg);
+        string messageContent = "Victim from " +  to_string(grid.lastTile->getRow()) + " " + to_string(grid.lastTile->getColumn()) + " to " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
+        enqueueMeshOutput(Message(bridgeName, messageContent.c_str()));
     }
 }
 
-void Firefighter::wait()
+void Firefighter::wait() 
 {
     if (teamArrived) 
     {
@@ -168,62 +177,295 @@ void Firefighter::wait()
         setLEDOff();
         state = State::RESCUING_PERSON;
     }
-    else if (nbrFirefighters == 2) 
+    else if (nbrFirefighters == 2) //TODO: Change to 3 when all nodes are connected
     {
-        for(uint32_t member : teamMembers)
+        for(uint32_t member : teamMembers) 
         {
-            messagesToNode.push(std::make_pair(member, "TeamArrived"));
+            enqueueMeshOutput(Message(member, "TeamArrived"));
         }
-        nbrFirefighters = 1;
-        teamArrived = true;
+        nbrFirefighters = 0;
+        TeamArrived();
+        teamMembers.clear();
+    }
+    else 
+    {
+        printToDisplay("Waiting for team");
     }
 }
 
-void Firefighter::TeamArrived()
+void Firefighter::TeamArrived() 
 {
     teamArrived = true;
     grid.bfsTo(grid.exitTile);
+    grid.pathToTarget.erase(grid.pathToTarget.begin());
 }
 
-void Firefighter::startMission(int row, int column)
+void Firefighter::startMission() 
 {
-    if (state == State::MOVING_HAZMAT) {
-        messagesToBroadcast.push("Hazmat " + String(grid.currentTile->getRow()) + " " + String(grid.currentTile->getColumn()));
-    }
-    grid.targetTile = grid.getTile(row, column);
-    grid.getTile(row, column)->addEvent(Event::VICTIM);
-    hasMission = true;
-    state = State::MOVING_TO_TARGET; 
-}
-
-void Firefighter::Die(int row, int column)
-{
-    if (grid.currentTile->getRow() == row && grid.currentTile->getColumn() == column)
+    if (state == State::MOVING_HAZMAT) 
     {
-        state = State::DEAD;
+        enqueueMeshOutput(Message(0, "Hazmat " + grid.currentTile->getRow() + ' ' + grid.currentTile->getColumn()));
+    }
+    grid.targetTile = grid.getTile(missionTargetRow, missionTargetColumn);
+    grid.targetTile->addEvent(Event::VICTIM);
+    hasMission = true;
+    grid.pathToTarget.clear();
+    state = State::MOVING_TO_TARGET;
+}
+
+void Firefighter::fireStrike(int row, int column) 
+{
+    if (grid.currentTile->getRow() == row && grid.currentTile->getColumn() == column) 
+    {
+        string messageContent = "Victim " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
+        enqueueMeshOutput(Message(0, messageContent.c_str(), true));
+        state = State::VICTIM;
     }
 }
 
-Firefighter::~Firefighter()
+Firefighter::~Firefighter() 
 {
     delete &grid;
 }
-        
+
+void Firefighter::registerMeshOutput(QueueHandle_t *meshOutputQueue) 
+{
+    this->meshOutPutQueue = meshOutputQueue;
+}
+
+void Firefighter::enqueueMeshOutput(const Message &msg) 
+{
+    if (msg.message != "" && meshOutPutQueue != nullptr) 
+    {
+        if (xQueueSend(*meshOutPutQueue, &msg, 10) != pdPASS) 
+        {
+            Serial.println("Failed to add to mesh queue");
+        }
+    }
+}
+
+void Firefighter::handleMessage(uint32_t from, String msg) 
+{
+    printToDisplay(msg);
+    int row = 0;
+    int column = 0;
+    vector<String> tokens = tokenize(msg);
+
+    if (tokens[0] == "Tick") 
+    {
+        Tick();
+    }
+    else if (tokens[0] == "Release") 
+    {
+        setLEDOff();
+        grid.currentTile->removeEvent(Event::VICTIM);
+        grid.targetTile->removeEvent(Event::VICTIM);
+        state = State::SEARCHING;
+    }
+    else if (tokens[0] == "ReqPos") 
+    {
+        string messageContent = "Pos " + to_string(grid.currentTile->getRow()) + " " + to_string(grid.currentTile->getColumn());
+        enqueueMeshOutput(Message(from, messageContent.c_str()));
+    }
+    else if (tokens[0] == "Yes") 
+    {
+        setLEDColor(0, 255, 0, 0);  // Grön färg
+        teamMembers.push_back(from);
+    }
+    else if (tokens[0] == "No") 
+    {
+        setLEDColor(255, 0, 0, 0);  // Röd färg
+        for (int i = 0; i < teamMembers.size(); i++) {
+            if (positionsList[positionListCounter].first == teamMembers[i]) {
+                i = 0;
+                positionListCounter = (positionListCounter + 1) % positionsList.size();
+            }
+        }
+        string messageContent = "Help " + to_string(grid.targetTile->getRow()) + ' ' + to_string(grid.targetTile->getColumn());
+        enqueueMeshOutput(Message(positionsList[positionListCounter].first, messageContent.c_str()));
+        positionListCounter = (positionListCounter + 1) % positionsList.size();
+    }
+    else if (tokens[0] == "Arrived") 
+    {
+        nbrFirefighters++;
+    }
+    else if (tokens[0] == "TeamArrived") 
+    {
+        TeamArrived();
+    }
+
+    else if (tokens.size() == 3 && tryParseInt(tokens[1], row) && tryParseInt(tokens[2], column)) 
+    {      
+        if (tokens[0] == "Fire") 
+        {
+            grid.getTile(row, column)->addEvent(Event::FIRE);
+        }
+        else if (tokens[0] == "Smoke") 
+        {
+            grid.getTile(row, column)->addEvent(Event::SMOKE);
+        }
+        else if (tokens[0] == "Victim") 
+        {
+            grid.getTile(row, column)->addEvent(Event::VICTIM);
+        }
+        else if (tokens[0] == "Hazmat") 
+        {
+            grid.getTile(row, column)->addEvent(Event::HAZMAT);
+        }
+        else if (tokens[0] == "RemoveVictim") 
+        {
+            if (grid.getTile(row, column) == grid.targetTile || grid.getTile(row, column) == grid.currentTile) 
+            {
+                return;
+            }
+            else 
+            {
+                grid.getTile(row, column)->removeEvent(Event::VICTIM);
+            }
+        }
+        else if (tokens[0] == "RemoveFire") 
+        {
+            grid.getTile(row, column)->removeEvent(Event::FIRE);
+        }
+        else if (tokens[0] == "RemoveSmoke") 
+        {
+            grid.getTile(row, column)->removeEvent(Event::SMOKE);
+        }
+        else if (tokens[0] == "RemoveHazmat") 
+        {
+            if (grid.getTile(row, column) == grid.currentTile || grid.getTile(row, column) == grid.targetTile) 
+            {
+                return;
+            }
+            else 
+            {
+                grid.getTile(row, column)->removeEvent(Event::HAZMAT);
+            }
+        } 
+        else if (tokens[0] == "Strike") 
+        {
+            fireStrike(row, column);
+        }
+        else if (tokens[0] == "Pos") 
+        {
+            handlePositions(from, row, column);
+        }
+        else if (tokens[0] == "Help") 
+        {
+            handleHelpRequest(from, row, column);
+        }
+    }
+}
+
+vector<String> Firefighter::tokenize(const String& expression) 
+{
+    vector<String> tokens;
+    String token;
+
+    for (int i = 0; i < expression.length(); ++i) 
+    {
+        char c = expression[i];
+        if (c == ' ') 
+        {
+            if (!token.isEmpty()) 
+            {
+                tokens.push_back(token);
+                token = "";
+            }
+        }
+        else 
+        {
+            token += c;
+        }
+    }
+    if (!token.isEmpty()) 
+    {
+        tokens.push_back(token);
+    }
+    return tokens;
+}
+
+bool Firefighter::tryParseInt(const String& str, int& outValue) 
+{
+    char* endPtr;
+    long value = strtol(str.c_str(), &endPtr, 10); // Försök att konvertera strängen
+
+    if (*endPtr == '\0') 
+    { // Kontrollera att hela strängen är ett giltigt tal
+        outValue = static_cast<int>(value);
+
+        if (value >= INT_MIN && value <= INT_MAX) 
+        {
+            return true;
+        }
+    }
+    return false; // Parsning misslyckades
+}
+
+void Firefighter::handlePositions(uint32_t from, int row, int column) 
+{
+    if (row == grid.targetTile->getRow() && column == grid.targetTile->getColumn())
+    {
+        enqueueMeshOutput(Message(from, "Release"));
+    }
+    float dis = sqrt(pow(row-grid.targetTile->getRow(),2)+pow(column-grid.targetTile->getColumn(),2));
+    positionsList.push_back({from, dis}); // Spara nodens position i positionsList
+    if (positionsList.size() == nbrExpectedAnswers) //Check if all nodes anwsered, if true, start sorting
+    { 
+        sort(positionsList.begin(), positionsList.end(),
+        [](const pair<uint32_t, float>& a, const pair<uint32_t, float>& b) 
+        {
+        return a.second < b.second; // Compare by distance
+        });
+    
+        positionListCounter = 0;
+    
+        for (positionListCounter; positionListCounter < 2; positionListCounter++) // TODO
+        {
+            string messageContent = "Help " + to_string(grid.targetTile->getRow()) + ' ' + to_string(grid.targetTile->getColumn());
+            enqueueMeshOutput(Message(positionsList[positionListCounter].first, messageContent.c_str()));
+        }
+        positionListCounter = positionListCounter % positionsList.size();
+    }
+}
+
+void Firefighter::handleHelpRequest(uint32_t from, int row, int column) 
+{
+    if (state == State::VICTIM) 
+    {
+        enqueueMeshOutput(Message(from, "No"));
+        pendingHelp = false;
+        tickCounter = 0;
+    }
+    else
+    {
+        leaderID = from;
+        setLEDColor(255, 200, 0, 0);  // Gul hjälpfärg
+        printToDisplay("Help request recieved");
+        missionTargetRow = row;
+        missionTargetColumn = column;
+        tickCounter = 0;
+        pendingHelp = true;
+    }
+}
+
 void Firefighter::Tick() 
 {
-    if (pendingHelp) {
+    if (pendingHelp) 
+    {
         tickCounter++;
-        if (tickCounter >= 3) {
-            messagesToNode.push(std::make_pair(leaderID, "No"));
+        if (tickCounter >= 3) 
+        {
+            enqueueMeshOutput(Message(leaderID, "No"));
             tickCounter = 0;
             pendingHelp = false;
         }
     }
-    if (state == State::SEARCHING)
+    if (state == State::SEARCHING) 
     {
-        if (grid.atDeadEnd())
+        if (grid.atDeadEnd()) 
         {
-            if (grid.lastTile->hasEvent(Event::FIRE))
+            if (grid.lastTile->hasEvent(Event::FIRE)) 
             {
                 state = State::PUTTING_OUT_FIRE;
                 grid.targetTile = grid.lastTile;
@@ -233,35 +475,35 @@ void Firefighter::Tick()
     switch (state) 
     {
         case State::SEARCHING:
-            //Serial.println("SEARCHING\n");
+            //Serial.println("SEARCHING");
             searchForTarget();
             break;
         case State::MOVING_TO_TARGET:
-            //Serial.println("MOVING_TO_TARGET\n");
+            //Serial.println("MOVING_TO_TARGET");
             moveToTarget();
             break;
         case State::PUTTING_OUT_FIRE:
-            //Serial.println("PUTTING_OUT_FIRE\n");
+            //Serial.println("PUTTING_OUT_FIRE");
             extinguishFire();
             break;
         case State::PUTTING_OUT_SMOKE:
-            //Serial.println("PUTTING_OUT_SMOKE\n");
+            //Serial.println("PUTTING_OUT_SMOKE");
             extinguishSmoke();
             break;
         case State::MOVING_HAZMAT:
-            //Serial.println("MOVING_HAZMAT\n");
+            //Serial.println("MOVING_HAZMAT");
             moveHazmat();
             break;
         case State::RESCUING_PERSON:
-            //Serial.println("RESCUING_PERSON\n");
+            //Serial.println("RESCUING_PERSON");
             rescuePerson();
-            break;  
-        case State::DEAD:
-            //Serial.println("DEAD\n");
-            break; 
+            break;
+        case State::VICTIM:
+            //Serial.println("DEAD");
+            break;
         case State::WAITING:
-            //Serial.println("WAITING\n");
+            //Serial.println("WAITING");
             wait();
-            break;                 
+            break;         
     }
 }

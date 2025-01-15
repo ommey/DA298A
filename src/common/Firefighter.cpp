@@ -177,7 +177,7 @@ void Firefighter::wait()
         setLEDOff();
         state = State::RESCUING_PERSON;
     }
-    else if (nbrFirefighters == 1) //TODO: Change to 3 when all nodes are connected
+    else if (nbrFirefighters == 2) //TODO: Change to 3 when all nodes are connected
     {
         for(uint32_t member : teamMembers) 
         {
@@ -420,7 +420,7 @@ void Firefighter::handlePositions(uint32_t from, int row, int column)
     
         positionListCounter = 0;
     
-        for (positionListCounter; positionListCounter < 1; positionListCounter++) // TODO
+        for (positionListCounter; positionListCounter < 2; positionListCounter++) // TODO
         {
             string messageContent = "Help " + to_string(grid.targetTile->getRow()) + ' ' + to_string(grid.targetTile->getColumn());
             enqueueMeshOutput(Message(positionsList[positionListCounter].first, messageContent.c_str()));
